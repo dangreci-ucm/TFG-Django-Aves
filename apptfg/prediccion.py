@@ -1,5 +1,5 @@
 import pandas as pd 
-from imblearn.over_sampling import SMOTE
+
 from sklearn.model_selection import train_test_split 
 from sklearn.ensemble import RandomForestClassifier        # Random forest classifier
 
@@ -65,7 +65,7 @@ def crear_modelo (x, y,modelo, oversample, huesos):
     valor = estimar(pd.DataFrame(huesos, index = [0]) , modelo)
     return valor, modelo 
 
-def main(data, huesos):
+def main(data,overfiting, huesos):
     """
     data: dataframe con los datos
     overfiting: es el método usado para equilibrar las especies con menos datos. Puede ser:
@@ -73,7 +73,6 @@ def main(data, huesos):
     huesos: diccionario de huesos con el valor indicado por el usuario
             por ejemplo: {'tarsometatarso':33, 'cubito':80}
     """
-    overfiting=SMOTE()
     (x, y),(X_train, X_test, Y_train, Y_test), (x_train_res, y_train_res) = data_preparation_model(data, 'Especie', overfiting, huesos)
     # usaremos randomforest
     rf = RandomForestClassifier(n_estimators=10) 

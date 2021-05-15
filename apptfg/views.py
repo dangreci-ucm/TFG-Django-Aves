@@ -1,5 +1,6 @@
 import operator
 
+from imblearn.over_sampling import SMOTE
 from django.shortcuts import render
 
 from . import prediccion
@@ -37,7 +38,7 @@ def calcular(request):
       huesos = {k:v for k,v in todos_huesos.items() if v > 0}
       print(huesos)
       path = 'apptfg/datos.html'
-      result, score_modelo = prediccion.main(data_from_excel.data, huesos)
+      result, score_modelo = prediccion.main(data_from_excel.data,SMOTE(), huesos)
       print(result)
       # Calculate percentage
       result=percentage(result)
