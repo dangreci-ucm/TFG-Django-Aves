@@ -1,8 +1,12 @@
 import pandas as pd 
+import os
+
 class ReadData:
 
     def __init__(self):
-        self.path = "./apptfg/static/bbdd/version 2016.xlsx"
+        THIS_FOLDER = os.path.dirname(os.path.abspath(__file__))
+       
+        self.path = os.path.join(THIS_FOLDER, 'static/bbdd/version 2016.xlsx')
         self.data = self.read_data_from_excel()
         
 
