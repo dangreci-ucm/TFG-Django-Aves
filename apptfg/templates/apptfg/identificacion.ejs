@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <link rel="stylesheet" type="text/css" media="screen" href="../static/css/pp.css">
+    <link rel="icon" type="image/png" href="../img/3674164.png">
+    <!--Icons made by <a href="https://www.flaticon.com/authors/freepik" title="Freepik">Freepik</a> from <a href="https://www.flaticon.com/" title="Flaticon"> www.flaticon.com</a> -->
+
+
+    <meta charset="UTF-8">
+    <title>
+        TFG
+    </title>
+</head>
+
+<body id="scroll">
+
+    <header>
+        <h1>Identificación de Restos Óseos en Aves</h1>
+    </header>
+
+    <nav>
+        <hr>
+        <ul>
+            <li>
+                <a href="/" title="Inicio">INICIO</a>
+            </li>
+
+            <li>
+                <a href="#" title="menú">MENÚ</a>
+                <img src="https://www.lamoncloa.gob.es/Theme/RLaMoncloa/img/icon/flecha-abajo.png">
+            </li>
+
+            <li>
+                <a href="#" title="opciones">OPCIONES</a>
+                <img src="https://www.lamoncloa.gob.es/Theme/RLaMoncloa/img/icon/flecha-abajo.png">
+            </li>
+        </ul>
+       
+    </nav>
+
+
+    <div id="text">
+        <h2>Huesos de Ave Rapaz</h2>
+        <h3>Introduce aqui la medida en centímetros (cm) de los distintos huesos que haya encontrado.</h3>
+        <h3>De los huesos que no sepas su medida o no tengas, deja el valor a cero</h3>
+
+        <form action="calcular" method="POST">
+            {% csrf_token %}
+            <!--cambiar name q por los nombres de los huesos para recoger dichos datos-->
+            
+                Coxal L: <input class="q" type="number" name="coxalL" min="0" step="0.1" value="0"> cm<br> 
+                Coxal A: <input class="q" type="number" name="coxalA" min="0" step="0.1" value="0"> cm<br> 
+                Esternon: <input class="q" type="number" name="esternon" min="0" step="0.1" value="0"> cm<br> 
+                Femur: <input class="q" type="number" name="femur" min="0" step="0.1" value="0">cm<br> 
+                Tibiotarso: <input class="q" type="number" name="tibiotarso" min="0" step="0.1" value="0"> cm<br> 
+                Tarsometatarso: <input class="q" type="number" name="tarsometatarso" min="0" step="0.1" value="0">cm<br> 
+                Craneo A: <input class="q" type="number" name="craneoA" min="0" step="0.1" value="0"> cm<br> 
+                Craneo L: <input class="q" type="number" name="craneoL" min="0" step="0.1" value="0">cm<br> 
+                Humero: <input class="q" type="number" name="humero" min="0" step="0.1" value="0">cm<br> 
+                Cúbito: <input class="q" type="number" name="cubito" min="0" step="0.1" value="0"> cm<br> 
+                Radio: <input class="q" type="number" name="radio" min="0" step="0.1" value="0">cm<br>
+            
+                <input class="button" type="reset" value="Restaurar">
+                <input class="button" type="submit" value="Calcular">
+
+        </form>
+       
+        <div>
+            <h1>valor</h1>
+                {% for k,v in valor %}
+                    <div>
+                        <h5>Ave: {{k}}, Probabilidad:{{v}}</h5>
+                    </div>
+                {% endfor %}
+           
+        </div> 
+        
+    </div>
+
+    <footer>
+
+        <div id="name"> Creado por Paula SNG</div>
+        <div id="copyright">CopyRight</div>
+
+    </footer>
+
+
+</body>
+
+</html>
