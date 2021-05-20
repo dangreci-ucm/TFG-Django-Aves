@@ -21,10 +21,22 @@ body {
     min-height:700px;
 }
 
-#scroll {
+/* #scroll {
     cursor: default;
     overflow: scroll;
     height: auto;
+} */
+
+@media only screen and(min-width:780px) and (orientation:portrait){
+    header{
+        background:#154481;
+        color: #fff;
+        margin:0 auto;
+        width: 100%;
+        height: 10em;
+        vertical-align:middle;
+        text-align: center;
+    }
 }
 
 header{
@@ -72,10 +84,10 @@ nav li{
     font-size:14px;
 }
 
-nav li:hover{
+/* nav li:hover{
     background-color:#3e77c2;
     color:#fff;
-}
+} */
 
 nav li a{
     text-decoration: none;

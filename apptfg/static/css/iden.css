@@ -14,11 +14,11 @@ body {
     min-height:700px;
 }
 
-/* #scroll {
+#scroll {
     cursor: default;
     overflow: scroll;
     height: auto;
-} */
+}
 
 header{
     background:#154481;

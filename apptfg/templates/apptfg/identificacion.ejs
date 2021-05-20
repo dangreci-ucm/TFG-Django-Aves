@@ -2,8 +2,8 @@
 <html lang="es">
 
 <head>
-    <link rel="stylesheet" type="text/css" media="screen" href="../static/css/pp.css">
-    <link rel="icon" type="image/png" href="../img/3674164.png">
+    <link rel="stylesheet" type="text/css" media="screen" href="../static/css/iden.css">
+    <link rel="icon" type="image/png" href="../static/img/favicon_ave.png">
     <!--Icons made by <a href="https://www.flaticon.com/authors/freepik" title="Freepik">Freepik</a> from <a href="https://www.flaticon.com/" title="Flaticon"> www.flaticon.com</a> -->
 
 
@@ -26,7 +26,7 @@
                 <a href="/" title="Inicio">INICIO</a>
             </li>
 
-            <li>
+            <!-- <li>
                 <a href="#" title="menú">MENÚ</a>
                 <img src="https://www.lamoncloa.gob.es/Theme/RLaMoncloa/img/icon/flecha-abajo.png">
             </li>
@@ -34,7 +34,7 @@
             <li>
                 <a href="#" title="opciones">OPCIONES</a>
                 <img src="https://www.lamoncloa.gob.es/Theme/RLaMoncloa/img/icon/flecha-abajo.png">
-            </li>
+            </li> -->
         </ul>
        
     </nav>
@@ -46,20 +46,20 @@
         <h3>De los huesos que no sepas su medida o no tengas, deja el valor a cero</h3>
 
         <form action="calcular" method="POST">
-            {% csrf_token %}
-            <!--cambiar name q por los nombres de los huesos para recoger dichos datos-->
             
-                Coxal L: <input class="q" type="number" name="coxalL" min="0" step="0.1" value="0"> cm<br> 
-                Coxal A: <input class="q" type="number" name="coxalA" min="0" step="0.1" value="0"> cm<br> 
-                Esternon: <input class="q" type="number" name="esternon" min="0" step="0.1" value="0"> cm<br> 
-                Femur: <input class="q" type="number" name="femur" min="0" step="0.1" value="0">cm<br> 
-                Tibiotarso: <input class="q" type="number" name="tibiotarso" min="0" step="0.1" value="0"> cm<br> 
-                Tarsometatarso: <input class="q" type="number" name="tarsometatarso" min="0" step="0.1" value="0">cm<br> 
-                Craneo A: <input class="q" type="number" name="craneoA" min="0" step="0.1" value="0"> cm<br> 
-                Craneo L: <input class="q" type="number" name="craneoL" min="0" step="0.1" value="0">cm<br> 
-                Humero: <input class="q" type="number" name="humero" min="0" step="0.1" value="0">cm<br> 
-                Cúbito: <input class="q" type="number" name="cubito" min="0" step="0.1" value="0"> cm<br> 
-                Radio: <input class="q" type="number" name="radio" min="0" step="0.1" value="0">cm<br>
+            {% csrf_token %}
+            
+                Coxal L: <input class="square" type="number" name="coxalL" min="0" step="0.1" value="0"> cm<br> 
+                Coxal A: <input class="square" type="number" name="coxalA" min="0" step="0.1" value="0"> cm<br> 
+                Esternon: <input class="square" type="number" name="esternon" min="0" step="0.1" value="0"> cm<br> 
+                Femur: <input class="square" type="number" name="femur" min="0" step="0.1" value="0">cm<br> 
+                Tibiotarso: <input class="square" type="number" name="tibiotarso" min="0" step="0.1" value="0"> cm<br> 
+                Tarsometatarso: <input class="square" type="number" name="tarsometatarso" min="0" step="0.1" value="0">cm<br> 
+                Craneo A: <input class="square" type="number" name="craneoA" min="0" step="0.1" value="0"> cm<br> 
+                Craneo L: <input class="square" type="number" name="craneoL" min="0" step="0.1" value="0">cm<br> 
+                Humero: <input class="square" type="number" name="humero" min="0" step="0.1" value="0">cm<br> 
+                Cúbito: <input class="square" type="number" name="cubito" min="0" step="0.1" value="0"> cm<br> 
+                Radio: <input class="square" type="number" name="radio" min="0" step="0.1" value="0">cm<br>
             
                 <input class="button" type="reset" value="Restaurar">
                 <input class="button" type="submit" value="Calcular">
@@ -67,10 +67,10 @@
         </form>
        
         <div>
-            <h1>valor</h1>
+            <h3>{{msg}}</h3>
                 {% for k,v in valor %}
                     <div>
-                        <h5>Ave: {{k}}, Probabilidad:{{v}}</h5>
+                        <h5>Ave: {{k}}, Probabilidad:{{v}} %</h5>
                     </div>
                 {% endfor %}
            

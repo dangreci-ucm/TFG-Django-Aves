@@ -3,12 +3,13 @@ import operator
 from imblearn.over_sampling import SMOTE
 from django.shortcuts import render
 
-from . import prediccion
+from .prediccion import Prediction
 from .read_data import ReadData
 
 # Create your views here.
 
 data_from_excel = ReadData()
+prediction= Prediction()
 
 def principal(request):
     return render(request, 'apptfg/pagina_principal.ejs', {})
@@ -36,16 +37,17 @@ def calcular(request):
       # eliminamos los que tengan valor 0
       print(todos_huesos.items())
       huesos = {k:v for k,v in todos_huesos.items() if v > 0}
-      print(huesos)
+      if len(huesos)<=0: 
+         return render(request,'apptfg/identificacion.ejs', {'msg':'ERROR'})
       path = 'apptfg/datos.html'
-      result, score_modelo = prediccion.main(data_from_excel.data,SMOTE(), huesos)
+      result, score_modelo = prediction.main(data_from_excel.data,SMOTE(), huesos)
       print(result)
       # Calculate percentage
       result=percentage(result)
       # Sort the result of the prediction, result is a dictionarity
       result_sort= sorted(result.items(), key=operator.itemgetter(1),reverse=True) 
       print(result_sort)                     
-      return render(request,'apptfg/identificacion.ejs', {'valor': result_sort})
+      return render(request,'apptfg/identificacion.ejs', {'msg':'Resultados:','valor': result_sort})
 
    return render(request,'apptfg/identificacion.ejs',{})
 
