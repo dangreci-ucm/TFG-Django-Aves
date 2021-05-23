@@ -12,7 +12,7 @@ data_from_excel = ReadData()
 prediction= Prediction()
 
 def principal(request):
-    return render(request, 'apptfg/pagina_principal.ejs', {})
+    return render(request, 'apptfg/pagina_principal.html', {})
 
 def iden(request):
    return render(request, 'apptfg/identificacion.ejs',{})
@@ -38,7 +38,7 @@ def calcular(request):
       print(todos_huesos.items())
       huesos = {k:v for k,v in todos_huesos.items() if v > 0}
       if len(huesos)<=0: 
-         return render(request,'apptfg/identificacion.ejs', {'msg':'ERROR'})
+         return render(request,'apptfg/identificacion.ejs', {'msg':'Debe introducir al menos un valor'})
       path = 'apptfg/datos.html'
       result, score_modelo = prediction.main(data_from_excel.data,SMOTE(), huesos)
       print(result)
