@@ -11,8 +11,6 @@ class ReadData:
         
 
     def read_data_from_excel(self):
-        print("LEYENDDDDDDDDDDDDDDDDDDDDDDDDDDOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOO")
-        # lectura 
         data = pd.read_excel(self.path, sheet_name="Base de datos") #Leemos la base de datos
         data.dropna(inplace = True)
         data.pop('IDENT')
