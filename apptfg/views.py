@@ -38,7 +38,7 @@ def calcular(request):
                            
       # eliminamos los que tengan valor 0
       print(todos_huesos.items())
-      huesos = {k:float(v) for k,v in todos_huesos.items() if v!=' '}
+      huesos = {k:float(v) for k,v in todos_huesos.items() if v!=''}
       if len(huesos)<=0: 
          return render(request,'apptfg/identificacion.html', {'msg':'Debe introducir al menos un valor'})
 
