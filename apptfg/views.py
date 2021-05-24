@@ -15,31 +15,33 @@ def principal(request):
     return render(request, 'apptfg/pagina_principal.html', {})
 
 def iden(request):
-   return render(request, 'apptfg/identificacion.ejs',{})
+   return render(request, 'apptfg/identificacion.html',{})
 
 
 def calcular(request):
    print("CALCULANDO")
    if request.method=='POST':
       print("method post")
-      todos_huesos = {'coxalL':float(request.POST.get('coxalL')), 
-                     'coxalA':float( request.POST.get('coxalA')),
-                     'esternon':float( request.POST.get('esternon')),
-                     'femur':float( request.POST.get('femur')),
-                     'tibiotarso': float(request.POST.get('tibiotarso')),
-                     'tarsometatarso':float( request.POST.get('tarsometatarso')),
-                     'craneoancho':float( request.POST.get('craneoA')),
-                     'craneolongitud':float( request.POST.get('craneoL')),
-                     'humero':float(request.POST.get('humero')),
-                     'cubito':float( request.POST.get('cubito')),
-                     'radio':float(request.POST.get('radio'))}
+      todos_huesos = {
+                     'coxalL':request.POST.get('coxalL'), 
+                     'coxalA':request.POST.get('coxalA'),
+                     'esternon':request.POST.get('esternon'),
+                     'femur':request.POST.get('femur'),
+                     'tibiotarso': request.POST.get('tibiotarso'),
+                     'tarsometatarso': request.POST.get('tarsometatarso'),
+                     'craneoancho': request.POST.get('craneoA'),
+                     'craneolongitud': request.POST.get('craneoL'),
+                     'humero':request.POST.get('humero'),
+                     'cubito': request.POST.get('cubito'),
+                     'radio':request.POST.get('radio')
+                     }
                            
       # eliminamos los que tengan valor 0
       print(todos_huesos.items())
-      huesos = {k:v for k,v in todos_huesos.items() if v > 0}
+      huesos = {k:float(v) for k,v in todos_huesos.items() if v!=' '}
       if len(huesos)<=0: 
-         return render(request,'apptfg/identificacion.ejs', {'msg':'Debe introducir al menos un valor'})
-      path = 'apptfg/datos.html'
+         return render(request,'apptfg/identificacion.html', {'msg':'Debe introducir al menos un valor'})
+
       result, score_modelo = prediction.main(data_from_excel.data,SMOTE(), huesos)
       print(result)
       # Calculate percentage
@@ -47,9 +49,9 @@ def calcular(request):
       # Sort the result of the prediction, result is a dictionarity
       result_sort= sorted(result.items(), key=operator.itemgetter(1),reverse=True) 
       print(result_sort)                     
-      return render(request,'apptfg/identificacion.ejs', {'msg':'Resultados:','valor': result_sort})
+      return render(request,'apptfg/identificacion.html', {'msg':'Resultados:','valor': result_sort})
 
-   return render(request,'apptfg/identificacion.ejs',{})
+   return render(request,'apptfg/identificacion.html',{})
 
 def percentage(dic):
    for k,v in dic.items():

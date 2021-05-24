@@ -1,31 +1,4 @@
 
-#description{
-    margin-top: 2em;
-    padding:2em 2em 2em 2em;
-    text-align:left;
-}
-
-#description h1{
-    word-wrap: break-word;
-    font-family:'Lato-Bold',Arial;
-    font-size:20px;
-    font-weight:normal;
-    margin-bottom: 1%;
-    color: black;
-}
-
-p{
-    word-wrap: break-word;
-    color:#2a2a2a;
-    font-family:'Lato-Regular',Arial;
-    font-size:16px;
-    font-weight:normal;
-    line-height:normal;
-    margin:0;
-    padding: 1em 1em 1em 1em;
-    text-align:left;
-    background-color:rgba(29,71,121,.04);
-}
 
 #button{
     background-color:#154481;
@@ -33,7 +6,7 @@ p{
     border:none;
     color:#fff;
     float: right;
-    font-family:'Lato-Regular',Arial;
+    /* font-family:'Lato-Regular',Arial; */
     font-size:14px;
     margin-right:30px;
     padding:10px 36px;
