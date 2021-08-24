@@ -12,13 +12,85 @@ body {
     font-family:'Lato-Regular',Arial;
     margin:0 auto;
     max-width:1400px;
-    min-height:700px;
+    height:100%;
+    display: flex;
+    flex-direction: column;
 }
 
-img {
+/* img {
     width: 100%;
     height: auto;
+} */
+
+/**************************************************************/
+/*-------------- HEADER ------------------------------------- */
+/**************************************************************/
+
+header{
+    
+    background:#154481;
+    color: #fff;
+    margin:0 auto;
+    min-width: 100%;
+    min-height: 10%;
+    vertical-align:middle;
+    text-align: center;
 }
+
+header h1{
+    font-family:'Lato-Bold',Arial;
+    font-size:32px;
+    font-weight:bolder;
+    padding:1%;
+    
+}
+
+/**************************************************************/
+/*-------------- NAV ------------------------------------- */
+/**************************************************************/
+
+nav hr{
+    box-sizing:content-box;
+    height:0;
+}
+
+nav{
+    font-family:'Lato-Bold',Arial;
+    display: inline-block;
+    background:#154481;
+    width: 100%;
+    height: 2em;
+}
+
+nav ul{
+    list-style: none;
+    padding: 5px;
+}
+nav li{
+    display: inline;
+    color:#fff;
+    text-align: center;
+    margin-right: 3px;
+    padding-right: 15px;
+    padding-left: 15px;
+    font-family:'Lato-Bold',Arial;
+    font-size:14px;
+}
+
+nav li:hover{
+    background-color:#3e77c2;
+    color:#fff;
+}
+
+nav li a{
+    text-decoration: none;
+    color:#fff;
+    cursor:pointer;
+}
+
+/**************************************************************/
+/*-------------- CONTAINER PAGE ------------------------------------- */
+/**************************************************************/
 
 .text{
     overflow: auto;
@@ -53,83 +125,53 @@ p{
     background-color:rgba(29,71,121,.04);
 }
 
-/**************************************************************/
-/*-------------- HEADER ------------------------------------- */
-/**************************************************************/
-
-header{
-    
-    background:#154481;
-    color: #fff;
-    margin:0 auto;
-    min-width: 100%;
-    min-height: 10%;
-    vertical-align:middle;
-    text-align: center;
+.container__article{
+    max-width: 1000px;
+    padding: 0px 20px;
+    margin: auto;
+    margin-top: 20px;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
 }
 
-header h1{
-    font-family:'Lato-Bold',Arial;
-    font-size:32px;
-    font-weight:bolder;
-    padding:1%;
-    
+.box__article{
+    width: 200px;
+    height: 110px;
+    background: rgba(29,71,121,.04);
+    margin: 20px;
 }
 
-/**************************************************************/
-/*-------------- NAV ------------------------------------- */
-/**************************************************************/
-
-hr{
-    box-sizing:content-box;
-    height:0;
-}
-
-nav{
-    font-family:'Lato-Bold',Arial;
-    display: inline-block;
-    background:#154481;
-    width: 100%;
-    height: 2em;
-}
-
-nav ul{
-    list-style: none;
-    padding: 5px;
-}
-nav li{
-    display: inline;
-    color:#fff;
-    text-align: center;
-    margin-right: 3px;
-    padding-right: 15px;
-    padding-left: 15px;
-    font-family:'Lato-Bold',Arial;
-    font-size:14px;
-}
-
-/* nav li:hover{
-    background-color:#3e77c2;
-    color:#fff;
-} */
-
-nav li a{
-    text-decoration: none;
-    color:#fff;
-    cursor:pointer;
+.box__article img{
+    display: block;
+    margin-left: auto;
+    margin-right: auto;
+    border-radius: 5%;
+    border: 5px solid #154481 ;
+    width: 150px;
+    height: 100px;
 }
 
 /**************************************************************/
 /*-------------- FOOTER ------------------------------------- */
 /**************************************************************/
 
-footer #pie_pagina{
-    max-width: 70%;
-    max-height: 15%;
-    margin-top:5% ;
-    color:#2a2a2a;
+footer{
+    width: 100%;
+    padding: 50px 0px;
+}
+
+#pie_pagina{
+    max-width: 1200px;
+    margin: auto;
     text-align: center;
-    overflow: auto;
+    padding: 0px 40px;
+}
+
+#pie_pagina hr{
+    border: none;
+    height: 1px;
+    background-color: #7a7a7a;
 }
 
 footer #imgucm{
