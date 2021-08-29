@@ -17,6 +17,11 @@ def principal(request):
 def iden(request):
    return render(request, 'apptfg/identificacion.html',{})
 
+def descargas(request):
+   return render(request,'apptfg/descargas.html',{})
+
+def contacto(request):
+   return render (request,'apptfg/contacto.html',{})
 
 def calcular(request):
    print("CALCULANDO")
@@ -48,8 +53,8 @@ def calcular(request):
       result=percentage(result)
       # Sort the result of the prediction, result is a dictionarity
       result_sort= sorted(result.items(), key=operator.itemgetter(1),reverse=True) 
-      print(result_sort)                     
-      return render(request,'apptfg/identificacion.html', {'msg':'Resultados:','valor': result_sort})
+      print(result_sort[0])                     
+      return render(request,'apptfg/identificacion.html', {'msg':'Resultados:','valor': result_sort, 'ave':'ave3'})
 
    return render(request,'apptfg/identificacion.html',{})
 
