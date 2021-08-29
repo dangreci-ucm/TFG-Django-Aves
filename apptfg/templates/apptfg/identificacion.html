@@ -1,148 +1,88 @@
-<!DOCTYPE html>
-<html lang="es">
-
-<head>
-    <link rel="stylesheet" type="text/css" media="screen" href="../static/css/same5.css">
+{% extends "apptfg/base.html" %}
+    {%block css%}
     <link rel="stylesheet" type="text/css" media="screen" href="../static/css/iden2.css">
-    <link rel="icon" type="image/png" href="../static/img/favicon_ave.png">
-    <!--Icons made by <a href="https://www.flaticon.com/authors/freepik" title="Freepik">Freepik</a> from <a href="https://www.flaticon.com/" title="Flaticon"> www.flaticon.com</a> -->
-    <meta name="viewport" content="width=device-width"/>
+    {%endblock%}
 
-    <meta charset="UTF-8">
-    <title>
-        Identificación - TFG
-    </title>
-</head>
-
-<body id="scroll">
-
-    <header>
-        <h1>Identificación de Restos Óseos en Rapaces Emblemáticas</h1>
-    </header>
-
-    <nav>
-        <hr>
-        <ul>
-            <li>
-                <a href="/" title="Inicio">INICIO</a>
-            </li>
-
-            <li>
-                <a href="/" title="Inicio">RECURSOS</a>
-            </li>
-
-            <li>
-                <a href="/" title="Inicio">CONTACTO</a>
-            </li>
-
-        </ul>
-       
-    </nav>
-
-    <div class="text">
-       
-        <div class="description">
-            <h1><b>Registro de restos óseos</b></h1>
-            <p>
-                Introduce la medida en centímetros de los distintos huesos que haya encontrado.
-            </p>
-        </div>
+    {%block title%}
+    Identificación - TFG
+    {%endblock%}
 
 
-        <div class="grid_container" id="grid_container_min">
-            <div id="card">
-                <form action="calcular" method="POST">
-                    <div class="grid_container">
-                        {% csrf_token %}
-                    
-                        <div class="label">
-                            Coxal L: <input class="square" type="number" name="coxalL" min="0" step="0.1" placeholder="0 cm">
-                        </div>
-                        <div class="label">
-                            Coxal A: <input class="square" type="number" name="coxalA" min="0" step="0.1" placeholder="0 cm"> 
-                        </div>
-                        <div class="label">
-                            Esternon: <input class="square" type="number" name="esternon" min="0" step="0.1" placeholder="0 cm"> 
-                        </div>
-                        <div class="label">
-                            Fémur: <input class="square" type="number" name="femur" min="0" step="0.1" placeholder="0 cm">                  
-                        </div>
-                        <div class="label">
-                            Tibiotarso: <input class="square" type="number" name="tibiotarso" min="0" step="0.1" placeholder="0 cm">             
-                        </div>
-                        <div class="label">
-                            Tarsometatarso: <input class="square" type="number" name="tarsometatarso" min="0" step="0.1" placeholder="0 cm"> 
-                        </div>
-                        <div class="label">
-                            Cráneo A: <input class="square" type="number" name="craneoA" min="0" step="0.1" placeholder="0 cm">                    
-                        </div>
-                        <div class="label">
-                            Cráneo L: <input class="square" type="number" name="craneoL" min="0" step="0.1" placeholder="0 cm"> 
-                        </div>
-                        <div class="label">
-                            Húmero: <input class="square" type="number" name="humero" min="0" step="0.1" placeholder="0 cm">   
-                        </div>
-                        <div class="label">
-                            Cúbito: <input class="square" type="number" name="cubito" min="0" step="0.1" placeholder="0 cm">
-                            
-                        </div>
-                        <div class="label">
-                            Radio: <input class="square" type="number" name="radio" min="0" step="0.1" placeholder="0 cm">
-                        </div>
-                    </div>
-
-                    <div id="lista_botones">
-                        <input class="button" type="reset" value="Restaurar">
-                        <a class="button" href="iden">Limpiar</a>
-                        <input class="button" type="submit" value="Calcular">
-                    </div>
-
-                </form>
-                   
-            </div>
-                  
-            <div id="result">
-                <h3>{{msg}}</h3>
-                    {% for k,v in valor %}
-                        <div>
-                            <h5>Ave: {{k}}, Probabilidad:{{v}} %</h5>
-                        </div>
-                    <!-- {%empty%}
-                        <img alt="Aguilucho Cenizo" src="../static/img/huesos.jpg" > -->
-                    {% endfor %}
-
-                <!-- <img alt="Aguilucho Cenizo" src="../static/img/img_aves/{{ave}}.jpg" > -->
-               
-            </div> 
-        </div>
-        
+    {%block body%}
+    <div class="description">
+        <h1><b>Registro de restos óseos</b></h1>
+        <p>
+            Introduce la medida en centímetros de los distintos huesos que haya encontrado.
+        </p>
     </div>
 
-    <footer>
-    
-        <div id="pie_pagina">
-            <hr>
-            <div id="imgucm">
-                <img alt="Logotipo secundario de la UCM" src="../static/img/logo_ucm.png" >
-            </div>
-        
-            <!-- <div id="name"> 
-                Esta página web ha sido desarrollada por Paula Sánchez de la Nieta Gómez
-            </div> -->
-        
-            <div id="creativecommons">
-                <a rel="license" href="http://creativecommons.org/licenses/by-nc-nd/4.0/">
-                    <img alt="Licencia de Creative Commons" src="https://i.creativecommons.org/l/by-nc-nd/4.0/88x31.png" />
-                </a> 
-            </div>
 
-            <img src="https://www.miteco.gob.es/es/sistema/includes/cabecera/logo-ministerio-transicion-ecologica_new_tcm30-283644_tcm30-283644.png">
+    <div class="grid_container" id="grid_container_min">
+        <div id="card">
+            <form action="calcular" method="POST">
+                <div class="grid_container">
+                    {% csrf_token %}
+                
+                    <div class="label">
+                        Coxal L: <input class="square" type="number" name="coxalL" min="0" step="0.1" placeholder="0 cm">
+                    </div>
+                    <div class="label">
+                        Coxal A: <input class="square" type="number" name="coxalA" min="0" step="0.1" placeholder="0 cm"> 
+                    </div>
+                    <div class="label">
+                        Esternon: <input class="square" type="number" name="esternon" min="0" step="0.1" placeholder="0 cm"> 
+                    </div>
+                    <div class="label">
+                        Fémur: <input class="square" type="number" name="femur" min="0" step="0.1" placeholder="0 cm">                  
+                    </div>
+                    <div class="label">
+                        Tibiotarso: <input class="square" type="number" name="tibiotarso" min="0" step="0.1" placeholder="0 cm">             
+                    </div>
+                    <div class="label">
+                        Tarsometatarso: <input class="square" type="number" name="tarsometatarso" min="0" step="0.1" placeholder="0 cm"> 
+                    </div>
+                    <div class="label">
+                        Cráneo A: <input class="square" type="number" name="craneoA" min="0" step="0.1" placeholder="0 cm">                    
+                    </div>
+                    <div class="label">
+                        Cráneo L: <input class="square" type="number" name="craneoL" min="0" step="0.1" placeholder="0 cm"> 
+                    </div>
+                    <div class="label">
+                        Húmero: <input class="square" type="number" name="humero" min="0" step="0.1" placeholder="0 cm">   
+                    </div>
+                    <div class="label">
+                        Cúbito: <input class="square" type="number" name="cubito" min="0" step="0.1" placeholder="0 cm">
+                        
+                    </div>
+                    <div class="label">
+                        Radio: <input class="square" type="number" name="radio" min="0" step="0.1" placeholder="0 cm">
+                    </div>
+                </div>
 
+                <div id="lista_botones">
+                    <input class="button" type="reset" value="Restaurar">
+                    <a class="button" href="iden">Limpiar</a>
+                    <input class="button" type="submit" value="Calcular">
+                </div>
+
+            </form>
+                
         </div>
-        
-                 
-    </footer>
+                
+        <div id="result">
+            <h3>{{msg}}</h3>
+                {% for k,v in valor %}
+                    <div>
+                        <h5>Ave: {{k}}, Probabilidad:{{v}} %</h5>
+                    </div>
+                <!-- {%empty%}
+                    <img alt="Aguilucho Cenizo" src="../static/img/huesos.jpg" > -->
+                {% endfor %}
 
-</body>
+            <!-- <img alt="Aguilucho Cenizo" src="../static/img/img_aves/{{ave}}.jpg" > -->
+            
+        </div> 
+    </div>
+    {%endblock%}
 
-</html>
+
