@@ -1,0 +1,71 @@
+
+.container_bird{
+    max-width: 1000px;
+    padding: 0px 20px;
+    margin: auto;
+    margin-top: 20px;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+}
+
+.bird{
+    position: relative;
+    width: 200px;
+    height: 110px;
+    background: rgba(29,71,121,.04);
+    margin: 20px;
+}
+
+.bird img{
+    display: block;
+    margin-left: auto;
+    margin-right: auto;
+    border-radius: 5%;
+    border: 5px solid #154481 ;
+    width: 150px;
+    height: 100px;
+}
+
+.overlay {
+    position: absolute;
+    bottom: 0;
+    background: rgb(0, 0, 0);
+    background: rgba(0, 0, 0, 0.5); /* Black see-through */
+    width: 100%;
+    transition: .5s ease;
+    opacity:0;
+    color: white;
+    font-size: 20px;
+    text-align: center;
+  }
+  
+.bird:hover .overlay{
+    opacity: 1;
+}
+
+#button{
+    background-color:#154481;
+    border-radius:4px;
+    border:none;
+    color:#fff;
+    font-size:100%;
+    display: block;
+    margin-right:auto;
+    margin-left:auto;
+    max-width: 10%;
+    text-align: center;
+    padding:10px 36px;
+}
+
+#button:hover{
+    background-color:#3e77c2;
+    color:#fff
+}
+
+#button a{
+    text-decoration: none;
+    color:#fff;
+    cursor:pointer;
+}
+
