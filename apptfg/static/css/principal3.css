@@ -9,41 +9,6 @@
     justify-content: center;
 }
 
-.bird{
-    position: relative;
-    width: 200px;
-    height: 110px;
-    background: rgba(29,71,121,.04);
-    margin: 20px;
-}
-
-.bird img{
-    display: block;
-    margin-left: auto;
-    margin-right: auto;
-    border-radius: 5%;
-    border: 5px solid #154481 ;
-    width: 150px;
-    height: 100px;
-}
-
-.overlay {
-    position: absolute;
-    bottom: 0;
-    background: rgb(0, 0, 0);
-    background: rgba(0, 0, 0, 0.5); /* Black see-through */
-    width: 100%;
-    transition: .5s ease;
-    opacity:0;
-    color: white;
-    font-size: 20px;
-    text-align: center;
-  }
-  
-.bird:hover .overlay{
-    opacity: 1;
-}
-
 #button{
     background-color:#154481;
     border-radius:4px;

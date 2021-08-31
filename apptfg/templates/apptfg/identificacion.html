@@ -61,25 +61,34 @@
 
                 <div id="lista_botones">
                     <input class="button" type="reset" value="Restaurar">
-                    <a class="button" href="iden">Limpiar</a>
                     <input class="button" type="submit" value="Calcular">
+                    <a class="button" href="iden">Limpiar</a>
                 </div>
 
             </form>
                 
         </div>
 
-        <div id="result">
+        <div class="result" id="result_min">
             <h3>{{msg}}</h3>
+            <ol>
                 {% for k,v in valor %}
-                    <div>
-                        <h5>Ave: {{k}}, Probabilidad:{{v}} %</h5>
-                    
+                <li>
+                   <p><b>{{k}}</b> con una probabilidad del <b>{{v}} %</b></p> 
+                    <div class="bird">
+                        <img alt="{{k}}" src="../static/img/img_aves/{{k}}.jpg" >
+                        <div class="overlay">{{k}}</div>
                     </div>
+                </li>
                 {%empty%}
                     <img id="img_huesos" alt="huesos" src="../static/img/huesos.jpg" >
                 {% endfor %}
+            </ol>
+            <!-- <div class="bird" id="result_bird">
                 <img alt="{{ave.0}}" src="../static/img/img_aves/{{ave.0}}.jpg" >
+                <div class="overlay">{{ave.0}}</div>
+            </div> -->
+                
 
             
         </div> 
