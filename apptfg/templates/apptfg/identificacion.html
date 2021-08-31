@@ -14,6 +14,9 @@
         <p>
             Introduce la medida en centímetros de los distintos huesos que haya encontrado.
         </p>
+
+        <p id="guide">Puede mirar la foto guía de los huesos, que se encuentra debajo del formulario,
+             para ayudarle a identificarlos.</p>
     </div>
 
 
@@ -81,6 +84,7 @@
                     </div>
                 </li>
                 {%empty%}
+                    <h3>Guía de huesos</h3>
                     <img id="img_huesos" alt="huesos" src="../static/img/huesos.jpg" >
                 {% endfor %}
             </ol>

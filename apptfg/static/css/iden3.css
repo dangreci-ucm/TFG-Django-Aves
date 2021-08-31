@@ -38,10 +38,9 @@
         
     }
 
-    #img_huesos{
+    #guide{
         display: none;
     }
-
 }
 
 @media only screen and (min-width:1200px){
@@ -54,11 +53,15 @@
         border-color: black;
     }
 
-    #img_huesos{
-        display: block;
-        width: 100%;
-        height: fit-content;
+    #guide{
+        display: none;
     }
+}
+
+#img_huesos{
+    display: block;
+    width: 100%;
+    height: fit-content;
 }
 
 #card{
