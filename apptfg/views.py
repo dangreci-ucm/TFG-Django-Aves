@@ -53,8 +53,8 @@ def calcular(request):
       result=percentage(result)
       # Sort the result of the prediction, result is a dictionarity
       result_sort= sorted(result.items(), key=operator.itemgetter(1),reverse=True) 
-      print(result_sort[0])                     
-      return render(request,'apptfg/identificacion.html', {'msg':'Resultados:','valor': result_sort, 'ave':'ave3'})
+      print(result_sort)                     
+      return render(request,'apptfg/identificacion.html', {'msg':'Resultados:','valor': result_sort, 'ave':result_sort[0]})
 
    return render(request,'apptfg/identificacion.html',{})
 
