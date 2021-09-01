@@ -1,0 +1,43 @@
+#grid_container_pdf {
+    position: relative;
+    max-width: 100%;
+    display: grid;
+    grid-template-columns: 33% 33% 33%;
+    padding: 2%;
+    
+}
+
+.box_pdf{
+    display: block;
+    width: max-content;
+    height: min-content;
+    background: rgba(29,71,121,.04);
+    margin: 20px;
+}
+
+.pdf{
+    position: relative;
+    width: fit-content;
+    
+}
+
+.btn_pdf {
+    background-color: #154481;
+    border: none;
+    color: white;
+    padding: 12px 16px;
+    font-size: 16px;
+    cursor: pointer;
+    display: block;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.btn_pdf a{
+    text-decoration: none;
+}
+  
+  /* Darker background on mouse-over */
+  .btn_pdf:hover {
+    background-color: #3e77c2;
+  }
