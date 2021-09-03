@@ -1,11 +1,30 @@
-#grid_container_pdf {
-    position: relative;
-    max-width: 100%;
-    display: grid;
-    grid-template-columns: 33% 33% 33%;
-    padding: 2%;
+
+@media only screen and (max-width:730px){
+    #grid_container_pdf {
+        position: relative;
+        max-width: 100%;
+        display: grid;
+        grid-template-columns: 50%;
+        padding: 2%;
+        
+    }
+
+}
+
+@media (min-width:1071px){
+   
+    #grid_container_pdf {
+        position: relative;
+        max-width: 100%;
+        display: grid;
+        grid-template-columns: 33% 33% 33%;
+        padding: 2%;
+        
+    }
     
 }
+
+
 
 .box_pdf{
     display: block;

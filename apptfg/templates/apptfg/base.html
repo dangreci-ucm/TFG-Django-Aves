@@ -4,6 +4,7 @@
 <head>
     {% load static %}
     <link rel="stylesheet" type="text/css" media="screen" href="../static/css/same.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
     {%block css%}{%endblock%}
     <link rel="icon" type="image/png" href="../static/img/favicon_ave.png">
     <link href="https://fonts.googleapis.com/css2?family=Roboto&display=swap" rel="stylesheet">
@@ -24,26 +25,29 @@
 
     <nav>
         <hr>
-        <ul>
-            <li>
-                <a href="/" title="Inicio">INICIO</a>
-            </li>
-
-            <li>
+        <div class="navbar">
+            <a href="/" title="Inicio">INICIO</a>
+            <div class="navhidden">
                 <a href="iden" title="Identificación">IDENTIFICACIÓN</a>
-            </li>
-
-            <li>
                 <a href="descargas" title="Recursos">RECURSOS</a>
-            </li>
-
-            <li>
                 <a href="contacto" title="Contacto">CONTACTO</a>
-            </li>
-
-        </ul>
+            </div>
+            <div class="menu">
+                <button class="menubtn">MENÚ 
+                    <i class="fa fa-caret-down"></i>
+                </button>
+                <div class="menu-content">
+                    <a href="iden" title="Identificación">IDENTIFICACIÓN</a>
+                    <a href="descargas" title="Recursos">RECURSOS</a>
+                    <a href="contacto" title="Contacto">CONTACTO</a>
+                </div>
+            </div> 
+            
+        </div>
     
     </nav>
+
+    
 
     <div class="text">
         {%block body%}{%endblock%}
