@@ -1,2 +1,2 @@
 Django~=2.2.4
-scikit-learn~=0.23
+scikit-learn~=0.20
