@@ -1,0 +1,243 @@
+* {
+    margin: 0;
+    padding: 0;
+}
+
+html{
+    background-color:rgba(29,71,121,.04);   
+}
+
+body {
+    background:#fff;
+    font-family:'Lato-Regular',Arial;
+    margin:0 auto;
+    max-width:1400px;
+    height:100%;
+    display: flex;
+    flex-direction: column;
+}
+
+/**************************************************************/
+/*-------------- HEADER ------------------------------------- */
+/**************************************************************/
+
+header{
+    
+    background:#154481;
+    color: #fff;
+    margin:0 auto;
+    min-width: 100%;
+    min-height: 10%;
+    vertical-align:middle;
+    text-align: center;
+}
+
+header h1{
+    font-family:'Lato-Bold',Arial;
+    font-size:32px;
+    font-weight:bolder;
+    padding:1%;
+    
+}
+
+/**************************************************************/
+/*-------------- NAV ------------------------------------- */
+/**************************************************************/
+
+@media only screen and (min-width:500px){
+   
+    .menu{
+        display: none;
+    }
+}
+
+@media only screen and (max-width:500px){
+   
+    .navhidden{
+        display: none;
+    }
+}
+
+.navbar {
+    overflow: hidden;
+    background-color: #154481;
+}
+  
+.navbar a {
+    float: left;
+    font-size: 16px;
+    color: white;
+    text-align: center;
+    padding: 14px 16px;
+    text-decoration: none;
+}
+
+.menu {
+    float: left;
+    overflow: hidden;
+}
+  
+.menu .menubtn {
+    font-size: 16px;  
+    border: none;
+    outline: none;
+    color: white;
+    padding: 14px 16px;
+    background-color: inherit;
+    font-family: inherit;
+    margin: 0;
+}
+  
+.navbar a:hover, .dropdown:hover .dropbtn {
+    background-color: #3e77c2;
+}
+  
+.menu-content {
+    display: none;
+    position: absolute;
+    background-color: #f9f9f9;
+    min-width: 160px;
+    box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
+    z-index: 1;
+}
+  
+.menu-content a {
+    float: none;
+    color: black;
+    padding: 12px 16px;
+    text-decoration: none;
+    display: block;
+    text-align: left;
+}
+  
+.menu-content a:hover {
+    background-color: #ddd;
+}
+  
+.menu:hover .menu-content {
+    display: block;
+}
+
+nav hr{
+    box-sizing:content-box;
+    height:0;
+}
+
+/**************************************************************/
+/*-------------- CONTAINER PAGE ------------------------------------- */
+/**************************************************************/
+
+.text{
+    overflow: auto;
+    font-family:'Lato-Regular',Arial;  
+}
+
+.description{
+    margin-top: 2em;
+    padding:2em 2em 2em 2em;
+    text-align:left;
+}
+
+.description h1{
+    word-wrap: break-word;
+    /* font-family:'Lato-Bold',Arial; */
+    font-size:20px;
+    font-weight:normal;
+    margin-bottom: 1%;
+    color: black;
+}
+
+p{
+    word-wrap: break-word;
+    color:#2a2a2a;
+    /* font-family:'Lato-Regular',Arial; */
+    font-size:16px;
+    font-weight:normal;
+    line-height:normal;
+    margin:0;
+    padding: 1em 1em 1em 1em;
+    text-align:left;
+    background-color:rgba(29,71,121,.04);
+}
+
+/**************************************************************/
+/*-------------- IMAGENES AVES ---------------------------- */
+/**************************************************************/
+
+.bird{
+    position: relative;
+    width: 200px;
+    height: 110px;
+    background: rgba(29,71,121,.04);
+    margin: 20px;
+}
+
+.bird img{
+    display: block;
+    margin-left: auto;
+    margin-right: auto;
+    border-radius: 5%;
+    border: 5px solid #154481 ;
+    width: 150px;
+    height: 100px;
+}
+
+.overlay {
+    position: absolute;
+    bottom: 0;
+    background: rgb(0, 0, 0);
+    background: rgba(0, 0, 0, 0.5); /* Black see-through */
+    width: 100%;
+    transition: .5s ease;
+    opacity:0;
+    color: white;
+    font-size: 20px;
+    text-align: center;
+  }
+  
+.bird:hover .overlay{
+    opacity: 1;
+}
+
+/**************************************************************/
+/*-------------- FOOTER ------------------------------------- */
+/**************************************************************/
+
+footer{
+    width: 100%;
+    padding: 50px 0px;
+}
+
+#pie_pagina{
+    max-width: 1200px;
+    margin: auto;
+    text-align: center;
+    padding: 0px 40px;
+}
+
+#pie_pagina hr{
+    border: none;
+    height: 1px;
+    background-color: #7a7a7a;
+}
+
+footer #imgucm{
+    margin-left: auto;
+    margin-right: auto;
+    display:inline-block;
+    padding: 1%;
+}
+
+footer #name{
+    margin:0px auto;
+    font-family:'Lato-Regular',Arial;
+    float: left;
+    max-width: 40%;
+    padding: 1%;
+}
+
+footer #creativecommons{
+    margin:0px auto;
+    float: left;
+    padding: 1%;
+}
