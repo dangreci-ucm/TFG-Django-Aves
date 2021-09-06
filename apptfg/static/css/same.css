@@ -88,7 +88,7 @@ header h1{
     margin: 0;
 }
   
-.navbar a:hover, .dropdown:hover .dropbtn {
+.navbar a:hover{
     background-color: #3e77c2;
 }
   
