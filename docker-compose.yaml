@@ -1,0 +1,42 @@
+version: '3.8'
+
+services:
+  web:
+    build: .
+    container_name: tfg_web_dev
+    command: sh -c "python manage.py migrate && python manage.py runserver 0.0.0.0:8000"
+    ports:
+      - "8000:8000"
+    environment:
+      DJANGO_DEBUG: "True"
+      DJANGO_ALLOWED_HOSTS: "*"
+      DJANGO_SECRET_KEY: "dev-secret"
+      DATABASE_NAME: "tfg_db"
+      DATABASE_USER: "tfg_user"
+      DATABASE_PASSWORD: "123"
+      DATABASE_HOST: "database"
+    depends_on:
+      database:
+        condition: service_healthy
+    volumes:
+      - .:/app
+      
+  database:
+    image: postgres:16
+    container_name: postgres
+    environment:
+      POSTGRES_DB: tfg_db
+      POSTGRES_USER: tfg_user
+      POSTGRES_PASSWORD: 123
+    volumes:
+      - ./db:/var/lib/postgresql/data
+      - ./logs:/var/log/postgresql
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U tfg_user -d tfg_db"]
+      interval: 2s
+      timeout: 3s
+      retries: 30
+
+# Si se usa rutas ./db y ./logs como bind mounts, no se necesita declarar volúmenes aquí.

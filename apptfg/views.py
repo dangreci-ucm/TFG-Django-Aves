@@ -1,62 +1,42 @@
 import operator
 
-from imblearn.over_sampling import SMOTE
 from django.shortcuts import render
+from . import services
 
-from .prediccion import Prediction
-from .read_data import ReadData
-
-# Create your views here.
-
-data_from_excel = ReadData()
-prediction= Prediction()
 
 def principal(request):
-    return render(request, 'apptfg/pagina_principal.html', {})
+    # frontend/html/pagina_principal.html
+    return render(request, 'pagina_principal.html', {})
+
 
 def iden(request):
-   return render(request, 'apptfg/identificacion.html',{})
+    # frontend/html/identificacion.html
+    return render(request, 'identificacion.html', {})
+
 
 def descargas(request):
-   return render(request,'apptfg/descargas.html',{})
+    # frontend/html/descargas.html
+    return render(request, 'descargas.html', {})
+
 
 def contacto(request):
-   return render (request,'apptfg/contacto.html',{})
+    # frontend/html/contacto.html
+    return render(request, 'contacto.html', {})
+
 
 def calcular(request):
-   
-   if request.method=='POST':
-   
-      todos_huesos = {
-                     'coxalL':request.POST.get('coxalL'), 
-                     'coxalA':request.POST.get('coxalA'),
-                     'esternon':request.POST.get('esternon'),
-                     'femur':request.POST.get('femur'),
-                     'tibiotarso': request.POST.get('tibiotarso'),
-                     'tarsometatarso': request.POST.get('tarsometatarso'),
-                     'craneoancho': request.POST.get('craneoA'),
-                     'craneolongitud': request.POST.get('craneoL'),
-                     'humero':request.POST.get('humero'),
-                     'cubito': request.POST.get('cubito'),
-                     'radio':request.POST.get('radio')
-                     }
-                           
-      # eliminamos los que tengan valor 0
-      
-      huesos = {k:float(v) for k,v in todos_huesos.items() if v!=''}
-      if len(huesos)<=0: 
-         return render(request,'apptfg/identificacion.html', {'msg':'Debe introducir al menos un valor'})
+    # Este endpoint renderiza la misma pantalla de identificación, mostrando resultados
+    if request.method == 'POST':
+        huesos = services.build_huesos_from_post(request.POST)
 
-      result, score_modelo = prediction.main(data_from_excel.data,SMOTE(), huesos)
-      
-      # Calculate percentage
-      result=percentage(result)
-      # Sort the result of the prediction, result is a dictionarity
-      result_sort= sorted(result.items(), key=operator.itemgetter(1),reverse=True) 
+        try:
+            result_sort = services.calcular_prediccion(huesos)
+        except ValueError as e:
+            return render(request, 'identificacion.html', {'msg': str(e)})
 
-      return render(request,'apptfg/identificacion.html', {'msg':'Resultados','valor': result_sort})
+        return render(request, 'identificacion.html', {'msg': 'Resultados', 'valor': result_sort})
 
-   return render(request,'apptfg/identificacion.html',{})
+    return render(request, 'identificacion.html', {})
 
 def percentage(dic):
    for k,v in dic.items():

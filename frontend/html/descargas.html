@@ -1,0 +1,94 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block css %}
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+<link rel="stylesheet" type="text/css" media="screen" href="{% static 'css/descargas1.css' %}">
+{% endblock %}
+
+{% block title %}
+Recursos - TFG
+{% endblock %}
+
+{% block body %}
+
+<div id="grid_container_pdf">
+
+    <div class="box_pdf">
+        <embed
+            src="{% static 'img/pdf/guia-identificacion-rapaces-restos-oseos-1parte_tcm30-198046.pdf' %}"
+            type="application/pdf"
+            class="pdf"
+        />
+        <h3>Guía de Identificación parte 1</h3>
+
+        <a
+            href="{% static 'img/pdf/guia-identificacion-rapaces-restos-oseos-1parte_tcm30-198046.pdf' %}"
+            class="btn_pdf"
+            target="_blank"
+        >
+            <i class="fa fa-eye" aria-hidden="true"></i> Visualizar
+        </a>
+
+        <a
+            href="{% static 'img/pdf/guia-identificacion-rapaces-restos-oseos-1parte_tcm30-198046.pdf' %}"
+            class="btn_pdf"
+            download="guia-identificacion-rapaces-restos-oseos-1parte"
+        >
+            <i class="fa fa-download"></i> Descarga
+        </a>
+    </div>
+
+    <div class="box_pdf">
+        <embed
+            src="{% static 'img/pdf/guiarapacesrestososeos2parte_tcm30-438424.pdf' %}"
+            type="application/pdf"
+            class="pdf"
+        />
+        <h3>Guía de Identificación parte 2</h3>
+
+        <a
+            href="{% static 'img/pdf/guiarapacesrestososeos2parte_tcm30-438424.pdf' %}"
+            class="btn_pdf"
+            target="_blank"
+        >
+            <i class="fa fa-eye" aria-hidden="true"></i> Visualizar
+        </a>
+
+        <a
+            href="{% static 'img/pdf/guiarapacesrestososeos2parte_tcm30-438424.pdf' %}"
+            class="btn_pdf"
+            download="guia-identificacion-rapaces-restos-oseos-2parte"
+        >
+            <i class="fa fa-download"></i> Descarga
+        </a>
+    </div>
+
+    <div class="box_pdf">
+        <embed
+            src="{% static 'img/pdf/Centros-Recuperacion.pdf' %}"
+            type="application/pdf"
+            class="pdf"
+        />
+        <h3>Listado de teléfonos</h3>
+
+        <a
+            href="{% static 'img/pdf/Centros-Recuperacion.pdf' %}"
+            class="btn_pdf"
+            target="_blank"
+        >
+            <i class="fa fa-eye" aria-hidden="true"></i> Visualizar
+        </a>
+
+        <a
+            href="{% static 'img/pdf/Centros-Recuperacion.pdf' %}"
+            class="btn_pdf"
+            download="Listado-Centros-Recuperacion"
+        >
+            <i class="fa fa-download"></i> Descarga
+        </a>
+    </div>
+
+</div>
+
+{% endblock %}

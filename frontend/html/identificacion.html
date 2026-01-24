@@ -1,0 +1,115 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block css %}
+<link rel="stylesheet" type="text/css" media="screen" href="{% static 'css/iden.css' %}">
+{% endblock %}
+
+{% block title %}
+Identificación - TFG
+{% endblock %}
+
+{% block body %}
+<div class="description">
+    <h1><b>Registro de restos óseos</b></h1>
+    <p>
+        Introduce la medida en centímetros de los distintos huesos que haya encontrado.
+    </p>
+
+    <p id="guide">
+        Puede mirar la foto guía de los huesos, que se encuentra debajo del formulario,
+        para ayudarle a identificarlos.
+    </p>
+</div>
+
+<div class="grid_container" id="grid_container_min">
+    <div id="card">
+        <form action="{% url 'calcular' %}" method="POST">
+            <div class="grid_container">
+                {% csrf_token %}
+
+                <div class="label">
+                    Longitud del Coxal:
+                    <input class="square" type="number" name="coxalL" min="0" step="0.1" placeholder="0 mm">
+                </div>
+
+                <div class="label">
+                    Anchura del Coxal:
+                    <input class="square" type="number" name="coxalA" min="0" step="0.1" placeholder="0 mm">
+                </div>
+
+                <div class="label">
+                    Esternón:
+                    <input class="square" type="number" name="esternon" min="0" step="0.1" placeholder="0 mm">
+                </div>
+
+                <div class="label">
+                    Fémur:
+                    <input class="square" type="number" name="femur" min="0" step="0.1" placeholder="0 mm">
+                </div>
+
+                <div class="label">
+                    Tibiotarso:
+                    <input class="square" type="number" name="tibiotarso" min="0" step="0.1" placeholder="0 mm">
+                </div>
+
+                <div class="label">
+                    Tarsometatarso:
+                    <input class="square" type="number" name="tarsometatarso" min="0" step="0.1" placeholder="0 mm">
+                </div>
+
+                <div class="label">
+                    Anchura del Cráneo:
+                    <input class="square" type="number" name="craneoA" min="0" step="0.1" placeholder="0 mm">
+                </div>
+
+                <div class="label">
+                    Longitud del Cráneo:
+                    <input class="square" type="number" name="craneoL" min="0" step="0.1" placeholder="0 mm">
+                </div>
+
+                <div class="label">
+                    Húmero:
+                    <input class="square" type="number" name="humero" min="0" step="0.1" placeholder="0 mm">
+                </div>
+
+                <div class="label">
+                    Cúbito:
+                    <input class="square" type="number" name="cubito" min="0" step="0.1" placeholder="0 mm">
+                </div>
+
+                <div class="label">
+                    Radio:
+                    <input class="square" type="number" name="radio" min="0" step="0.1" placeholder="0 mm">
+                </div>
+            </div>
+
+            <div id="lista_botones">
+                <input class="button" type="reset" value="Restaurar">
+                <input class="button" type="submit" value="Calcular">
+                <a class="button" href="{% url 'iden' %}">Limpiar</a>
+            </div>
+        </form>
+    </div>
+
+    <div class="result" id="result_min">
+        <h3>{{ msg }}</h3>
+
+        <ol>
+            {% for k, v in valor %}
+                <li>
+                    <p><b>{{ k }}</b> con una probabilidad del <b>{{ v }} %</b></p>
+
+                    <div class="bird">
+                        <img alt="{{ k }}" src="{% static 'img/img_aves/' %}{{ k }}.jpg">
+                        <div class="overlay">{{ k }}</div>
+                    </div>
+                </li>
+            {% empty %}
+                <h3>Guía de huesos</h3>
+                <img id="img_huesos" alt="huesos" src="{% static 'img/huesos.jpg' %}">
+            {% endfor %}
+        </ol>
+    </div>
+</div>
+{% endblock %}
