@@ -24,7 +24,8 @@ Identificación - TFG
 
 <div class="grid_container" id="grid_container_min">
     <div id="card">
-        <form action="{% url 'calcular' %}" method="POST">
+        <!-- Quitamos action para evitar POST clásico -->
+        <form id="form-identificacion" method="POST">
             <div class="grid_container">
                 {% csrf_token %}
 
@@ -87,29 +88,99 @@ Identificación - TFG
             <div id="lista_botones">
                 <input class="button" type="reset" value="Restaurar">
                 <input class="button" type="submit" value="Calcular">
+                <!-- Para "limpiar" sin depender de Django, recargamos /iden -->
                 <a class="button" href="{% url 'iden' %}">Limpiar</a>
             </div>
         </form>
     </div>
 
     <div class="result" id="result_min">
-        <h3>{{ msg }}</h3>
+        <!-- Este título se actualiza con JS -->
+        <h3 id="msg_title">{% if msg %}{{ msg }}{% else %}Guía de huesos{% endif %}</h3>
 
-        <ol>
-            {% for k, v in valor %}
-                <li>
-                    <p><b>{{ k }}</b> con una probabilidad del <b>{{ v }} %</b></p>
+        <ol id="results_list">
+            {% if valor %}
+                {% for k, v in valor %}
+                    <li>
+                        <p><b>{{ k }}</b> con una probabilidad del <b>{{ v }} %</b></p>
 
-                    <div class="bird">
-                        <img alt="{{ k }}" src="{% static 'img/img_aves/' %}{{ k }}.jpg">
-                        <div class="overlay">{{ k }}</div>
-                    </div>
+                        <div class="bird">
+                            <img alt="{{ k }}" src="{% static 'img/img_aves/' %}{{ k }}.jpg">
+                            <div class="overlay">{{ k }}</div>
+                        </div>
+                    </li>
+                {% endfor %}
+            {% else %}
+                <!-- Estado inicial: guía -->
+                <li id="guia_item">
+                    <img id="img_huesos" alt="huesos" src="{% static 'img/huesos.jpg' %}">
                 </li>
-            {% empty %}
-                <h3>Guía de huesos</h3>
-                <img id="img_huesos" alt="huesos" src="{% static 'img/huesos.jpg' %}">
-            {% endfor %}
+            {% endif %}
         </ol>
     </div>
 </div>
+
+<script>
+  const form = document.getElementById("form-identificacion");
+  const msgTitle = document.getElementById("msg_title");
+  const resultsList = document.getElementById("results_list");
+
+  function showGuide() {
+    msgTitle.textContent = "Guía de huesos";
+    resultsList.innerHTML = `
+      <li id="guia_item">
+        <img id="img_huesos" alt="huesos" src="{% static 'img/huesos.jpg' %}">
+      </li>
+    `;
+  }
+
+  form.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    msgTitle.textContent = "Calculando...";
+    resultsList.innerHTML = "";
+
+    const formData = new FormData(form);
+
+    try {
+      const resp = await fetch("/api/calcular", {
+        method: "POST",
+        body: new URLSearchParams(formData),
+      });
+
+      const data = await resp.json();
+
+      if (!resp.ok || !data.ok) {
+        showGuide();
+        msgTitle.textContent = data.error || "Error";
+        return;
+      }
+
+      const results = data.results || [];
+      if (results.length === 0) {
+        showGuide();
+        return;
+      }
+
+      msgTitle.textContent = "Resultados";
+
+      resultsList.innerHTML = results.map(([especie, prob]) => {
+        const imgSrc = `{% static 'img/img_aves/' %}${especie}.jpg`;
+        return `
+          <li>
+            <p><b>${especie}</b> con una probabilidad del <b>${prob} %</b></p>
+            <div class="bird">
+              <img alt="${especie}" src="${imgSrc}">
+              <div class="overlay">${especie}</div>
+            </div>
+          </li>
+        `;
+      }).join("");
+
+    } catch (err) {
+      showGuide();
+      msgTitle.textContent = "Error de red o servidor";
+    }
+  });
+</script>
+
 {% endblock %}
