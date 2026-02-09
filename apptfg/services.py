@@ -53,29 +53,6 @@ def build_huesos_from_post(post: Dict[str, Any]) -> Dict[str, float]:
     return huesos
 
 
-def build_huesos_from_json(payload: Dict[str, Any]) -> Dict[str, float]:
-    """
-    Igual que POST pero para JSON.
-    Así el futuro frontend puede enviar JSON directamente.
-    """
-    todos_huesos = {
-        "coxalL": _to_float_or_none(payload.get("coxalL")),
-        "coxalA": _to_float_or_none(payload.get("coxalA")),
-        "esternon": _to_float_or_none(payload.get("esternon")),
-        "femur": _to_float_or_none(payload.get("femur")),
-        "tibiotarso": _to_float_or_none(payload.get("tibiotarso")),
-        "tarsometatarso": _to_float_or_none(payload.get("tarsometatarso")),
-        "craneoancho": _to_float_or_none(payload.get("craneoA")),
-        "craneolongitud": _to_float_or_none(payload.get("craneoL")),
-        "humero": _to_float_or_none(payload.get("humero")),
-        "cubito": _to_float_or_none(payload.get("cubito")),
-        "radio": _to_float_or_none(payload.get("radio")),
-    }
-
-    huesos = {k: v for k, v in todos_huesos.items() if v is not None}
-    return huesos
-
-
 def percentage(dic: Dict[str, float]) -> Dict[str, float]:
     for k, v in dic.items():
         dic[k] = round(v * 100, 2)
