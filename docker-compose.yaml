@@ -1,10 +1,37 @@
 version: '3.8'
 
 services:
+  database:
+    image: postgres:16
+    container_name: postgres
+    environment:
+      POSTGRES_DB: tfg_db
+      POSTGRES_USER: tfg_user
+      POSTGRES_PASSWORD: "123"
+    volumes:
+      - ./db:/var/lib/postgresql/data
+      - ./logs:/var/log/postgresql
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U tfg_user -d tfg_db"]
+      interval: 2s
+      timeout: 3s
+      retries: 30
+
   web:
     build: .
     container_name: tfg_web_dev
-    command: sh -c "python manage.py migrate && python manage.py runserver 0.0.0.0:8000"
+    # Espera activamente a Postgres antes de migrar/arrancar
+    command: >
+      sh -c "
+      until python -c \"import psycopg2; psycopg2.connect(host='database', dbname='tfg_db', user='tfg_user', password='123')\"; do
+        echo 'Esperando a Postgres...';
+        sleep 2;
+      done;
+      python manage.py migrate &&
+      python manage.py runserver 0.0.0.0:8000
+      "
     ports:
       - "8000:8000"
     environment:
@@ -31,21 +58,3 @@ services:
     volumes:
       - ./frontend:/usr/share/nginx/html:ro
       - ./nginx/nginx.conf:/etc/nginx/conf.d/default.conf:ro
-
-  database:
-    image: postgres:16
-    container_name: postgres
-    environment:
-      POSTGRES_DB: tfg_db
-      POSTGRES_USER: tfg_user
-      POSTGRES_PASSWORD: 123
-    volumes:
-      - ./db:/var/lib/postgresql/data
-      - ./logs:/var/log/postgresql
-    ports:
-      - "5432:5432"
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U tfg_user -d tfg_db"]
-      interval: 2s
-      timeout: 3s
-      retries: 30
