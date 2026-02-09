@@ -1,17 +1,15 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    {% load static %}
-
     <!-- CSS base -->
-    <link rel="stylesheet" type="text/css" media="screen" href="{% static 'css/same.css' %}">
+    <link rel="stylesheet" type="text/css" media="screen" href="/css/same.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
 
     <!-- CSS específico de cada página -->
-    {% block css %}{% endblock %}
+    <!-- Ejemplo: <link rel="stylesheet" href="/css/iden.css"> -->
 
     <!-- Favicon -->
-    <link rel="icon" type="image/png" href="{% static 'img/favicon_ave.png' %}">
+    <link rel="icon" type="image/png" href="/img/favicon_ave.png">
 
     <!-- Fuente -->
     <link href="https://fonts.googleapis.com/css2?family=Roboto&display=swap" rel="stylesheet">
@@ -20,9 +18,7 @@
     <meta name="viewport" content="width=device-width">
     <meta charset="UTF-8">
 
-    <title>
-        {% block title %}{% endblock %}
-    </title>
+    <title>Identificación de Restos Óseos</title>
 </head>
 
 <body>
@@ -37,9 +33,9 @@
             <a href="/" title="Inicio">INICIO</a>
 
             <div class="navhidden">
-                <a href="{% url 'iden' %}" title="Identificación">IDENTIFICACIÓN</a>
-                <a href="{% url 'descargas' %}" title="Recursos">RECURSOS</a>
-                <a href="{% url 'contacto' %}" title="Contacto">CONTACTO</a>
+                <a href="/identificacion.html" title="Identificación">IDENTIFICACIÓN</a>
+                <a href="/descargas.html" title="Recursos">RECURSOS</a>
+                <a href="/contacto.html" title="Contacto">CONTACTO</a>
             </div>
 
             <div class="menu">
@@ -47,25 +43,23 @@
                     MENÚ <i class="fa fa-caret-down"></i>
                 </button>
                 <div class="menu-content">
-                    <a href="{% url 'iden' %}" title="Identificación">IDENTIFICACIÓN</a>
-                    <a href="{% url 'descargas' %}" title="Recursos">RECURSOS</a>
-                    <a href="{% url 'contacto' %}" title="Contacto">CONTACTO</a>
+                    <a href="/identificacion.html" title="Identificación">IDENTIFICACIÓN</a>
+                    <a href="/descargas.html" title="Recursos">RECURSOS</a>
+                    <a href="/contacto.html" title="Contacto">CONTACTO</a>
                 </div>
             </div>
         </div>
     </nav>
 
     <div class="text">
-        {% block body %}{% endblock %}
+        <!-- AQUÍ VA EL CONTENIDO DE CADA PÁGINA -->
     </div>
 
     <footer>
         <div id="pie_pagina">
             <hr>
             <div id="imgucm">
-                <img
-                    alt="Logotipo secundario de la UCM"
-                    src="{% static 'img/logo_ucm.png' %}">
+                <img alt="Logotipo secundario de la UCM" src="/img/logo_ucm.png">
             </div>
         </div>
     </footer>
