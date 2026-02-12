@@ -1,5 +1,5 @@
-# Base compatible con las dependencias (Django 2.2, sklearn 0.24, numpy 1.20)
-FROM python:3.9-slim
+# Base actualizada
+FROM python:3.12-slim
 
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
