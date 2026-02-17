@@ -67,7 +67,7 @@
 
         <div class="grid_container" id="grid_container_min">
             <div id="card">
-                <form id="form-identificacion" method="POST">
+                <form id="form-identificacion">
                     <div class="grid_container">
 
                         <div class="label">
@@ -127,7 +127,6 @@
                     </div>
 
                     <div id="lista_botones">
-                        <input class="button" type="reset" value="Restaurar">
                         <input class="button" type="submit" value="Calcular">
                         <!-- Limpiar: volvemos al estado inicial (guía) sin depender de Django -->
                         <button class="button" type="button" id="btn-limpiar">Limpiar</button>
@@ -172,10 +171,12 @@
         `;
       }
 
-      btnLimpiar.addEventListener("click", () => {
-        form.reset();
-        showGuide();
-      });
+      if (btnLimpiar) {
+        btnLimpiar.addEventListener("click", () => {
+            form.reset();
+            showGuide();
+        });
+       }
 
       form.addEventListener("submit", async (e) => {
         e.preventDefault();

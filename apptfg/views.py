@@ -5,22 +5,22 @@ from . import services
 
 
 def principal(request):
-    # frontend/html/pagina_principal.html
+    # frontend/pagina_principal.html
     return render(request, 'pagina_principal.html', {})
 
 
 def iden(request):
-    # frontend/html/identificacion.html
+    # frontend/identificacion.html
     return render(request, 'identificacion.html', {})
 
 
 def descargas(request):
-    # frontend/html/descargas.html
+    # frontend/descargas.html
     return render(request, 'descargas.html', {})
 
 
 def contacto(request):
-    # frontend/html/contacto.html
+    # frontend/contacto.html
     return render(request, 'contacto.html', {})
 
 

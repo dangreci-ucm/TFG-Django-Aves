@@ -7,7 +7,7 @@ from .prediccion import Prediction
 from .read_data import ReadData
 
 
-# Cargamos una vez (igual que haces ahora en views.py)
+# Cargamos una vez (igual que se hace ahora en views.py)
 _data_from_excel = ReadData()
 _prediction = Prediction()
 
@@ -27,7 +27,7 @@ def _to_float_or_none(v: Any):
 
 def build_huesos_from_post(post: Dict[str, Any]) -> Dict[str, float]:
     """
-    Replica tu mapeo actual:
+    Replica mapeo actual:
       - coxalL, coxalA, esternon, femur, tibiotarso, tarsometatarso, humero, cubito, radio
       - craneoA -> craneoancho
       - craneoL -> craneolongitud

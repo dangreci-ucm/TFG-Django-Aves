@@ -21,8 +21,7 @@ services:
 
   web:
     build: .
-    container_name: tfg_web_dev
-    # Espera activamente a Postgres antes de migrar/arrancar
+    container_name: django_backend
     command: >
       sh -c "
       until python -c \"import psycopg2; psycopg2.connect(host='database', dbname='tfg_db', user='tfg_user', password='123')\"; do
@@ -30,12 +29,12 @@ services:
         sleep 2;
       done;
       python manage.py migrate &&
-      python manage.py runserver 0.0.0.0:8000
+      exec gunicorn mysite.wsgi:application --bind 0.0.0.0:8000 --workers 3 --threads 2 --timeout 120 --log-level info
       "
-    ports:
-      - "8000:8000"
+    expose:
+      - "8000"
     environment:
-      DJANGO_DEBUG: "True"
+      DJANGO_DEBUG: "False"
       DJANGO_ALLOWED_HOSTS: "*"
       DJANGO_SECRET_KEY: "dev-secret"
       DATABASE_NAME: "tfg_db"
@@ -50,7 +49,7 @@ services:
 
   nginx:
     image: nginx:alpine
-    container_name: tfg_nginx_dev
+    container_name: nginx_frontend
     depends_on:
       - web
     ports:

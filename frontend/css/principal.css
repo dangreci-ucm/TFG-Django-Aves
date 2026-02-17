@@ -1,39 +1,66 @@
+/* =========================
+   Página principal (index)
+   ========================= */
 
-.container_bird{
-    max-width: 1000px;
-    padding: 0px 20px;
-    margin: auto;
-    margin-top: 20px;
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: center;
+.description{
+  margin-top: 2em;
+  padding: 2em;
+  text-align: left;
 }
 
+/* Botón "Comenzar" centrado y consistente */
 #button{
-    background-color:#154481;
-    border-radius:4px;
-    border:none;
-    color:#fff;
-    font-size:100%;
-    display: block;
-    margin-right:auto;
-    margin-left:auto;
-    max-width: 10%;
-    text-align: center;
-    padding:10px 36px;
+  background-color: #154481;
+  border-radius: 4px;
+  border: none;
+  color: #fff;
+
+  /* centrado */
+  margin: 20px auto;
+
+  /* tamaño estable */
+  width: fit-content;
+
+  /* el padding lo lleva el enlace */
+  padding: 0;
 }
 
 #button:hover{
-    background-color:#3e77c2;
-    color:#fff
+  background-color: #3e77c2;
 }
 
 #button a{
-    float: left;
-    font-size: 16px;
-    color: white;
-    text-align: center;
-    padding: 14px 16px;
-    text-decoration: none;
+  display: block;
+  color: white;
+  text-decoration: none;
+  font-size: 16px;
+  text-align: center;
+
+  /* el padding del "botón" */
+  padding: 14px 36px;
 }
 
+/* Galería de aves */
+.container_bird{
+  max-width: 1000px;
+  margin: 20px auto 40px auto;
+  padding: 0 20px;
+
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: flex-start;
+  gap: 20px; /* separación consistente */
+}
+
+/* Para espaciado anterior, comentar gap
+   y dejar margin en .bird (en same.css ya se tiene margin:20px)
+*/
+
+/* Responsive: en móviles, menos ancho disponible */
+@media (max-width: 500px){
+  .container_bird{
+    padding: 0 10px;
+    gap: 14px;
+  }
+}
