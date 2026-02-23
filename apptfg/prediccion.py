@@ -1,86 +1,108 @@
-import pandas as pd 
+import os
+from dataclasses import dataclass
+from typing import Dict, Any, List, Tuple
 
-from sklearn.model_selection import train_test_split 
-from sklearn.ensemble import RandomForestClassifier        # Random forest classifier
+import joblib
+import pandas as pd
+
+from sklearn.model_selection import train_test_split
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.impute import SimpleImputer
+
+from imblearn.over_sampling import SMOTE
+from imblearn.pipeline import Pipeline
+
+
+@dataclass
+class ModelBundle:
+    """
+    Lo que guardamos en disco.
+    - pipeline: imputación + random forest
+    - feature_names: columnas de entrada esperadas (huesos)
+    - score: accuracy estimada (para mantener tu idea de "prob * score")
+    """
+    pipeline: Any
+    feature_names: List[str]
+    score: float
+
 
 class Prediction:
-    
-    def data_preparation_model(self,tabla, col, oversample, huesos):
-        """
-        Preparación de los datos para evaluar el modelo y calcular su grado de ajuste
-        Oversample de los datos
-        -----------------------
-        col: es la columna 'Especie'
-        huesos: columnas para las cuales el usuario ha puesto una medida
-        oversample: método usado para realizar el oversample
-        """
-        # Seleccionamos todas las columnas asociadas a huesos que ha puesto el usuario
-        x = tabla.drop(col, axis = 1)
-        names_huesos = list(huesos.keys())
-        x = x.loc[:,names_huesos]
-        y = tabla[col]
-        # Dividimos los datos en entrenamiento y test
-        X_train, X_test, Y_train, Y_test = train_test_split(x,y,test_size = .1, random_state=12)
-        
-        # transform the dataset
-        
-        x_train_res, y_train_res = oversample.fit_resample(X_train, Y_train) 
-        return (x, y), (X_train, X_test, Y_train, Y_test), (x_train_res, y_train_res)
+    def __init__(self, model_path: str):
+        self.model_path = model_path
 
-    def evaluar_modelo(self,nombre, modelo, x_train_res, y_train_res, X_test,  Y_test):
-        # ajuste
-        modelo.fit(x_train_res, y_train_res.values)
-        score = modelo.score(X_test,  Y_test.values)
-        #print(f'Test results: el modelo {nombre} tiene una precisión de {score:.2f}')
-        return score
+    def model_exists(self) -> bool:
+        return os.path.exists(self.model_path)
 
-    def estimado_pos(self,fila):
-        m = fila[fila != 0]
-        return dict(zip(m.index.to_list(), m.to_list()))   
+    def load_model(self) -> ModelBundle:
+        return joblib.load(self.model_path)
 
-    def estimar(self,nuevos, modelo):
-        try:
-            valor = pd.DataFrame(modelo.predict_proba(nuevos), columns = modelo.classes_)
-            # borrar columnas que sumen 0
-            t = valor.T
-            t['Suma'] = t.sum(axis = 1)
-            valor1 = t[t.Suma != 0].drop('Suma', axis = 1)
-            valor1 = valor1.T
-            valor1['Estimado'] = valor1.apply(lambda fila: self.estimado_pos(fila), axis = 1)
-            return valor1.loc[0,'Estimado']
-        except:
-            return {}  # no se han calculado probabilidades    
-
-
-    # Random Forest Classifier with oversample all data
-    def crear_modelo (self,x, y,modelo, oversample, huesos):
+    def train_and_save(self, data: pd.DataFrame) -> ModelBundle:
         """
-        modelo: modelo que usamos para predecir
-        oversample: método usado para realizar el oversample
-        huesos: columnas para las cuales el usuario ha puesto una medida    
+        Entrena un modelo "global" usando TODAS las columnas de huesos disponibles en el dataset.
+        - Permite predicción aunque el usuario no rellene todos los huesos (imputación por media).
+        - Aplica SMOTE SOLO en train (después de imputar) con pipeline de imblearn.
         """
-        x_train_res, y_train_res = oversample.fit_resample(x, y) 
-        # ajuste
-        modelo.fit(x_train_res, y_train_res.values)
-        valor = self.estimar(pd.DataFrame(huesos, index = [0]) , modelo)
-        return valor, modelo 
+        if "Especie" not in data.columns:
+            raise ValueError("El dataset no contiene la columna 'Especie'")
 
-    def main(self,data,overfiting, huesos):
+        y = data["Especie"]
+        X = data.drop(columns=["Especie"])
+
+        feature_names = list(X.columns)
+
+        # Split
+        X_train, X_test, y_train, y_test = train_test_split(
+            X, y, test_size=0.1, random_state=12, stratify=y
+        )
+
+        # Pipeline: imputación -> SMOTE -> RandomForest
+        pipe = Pipeline(steps=[
+            ("imputer", SimpleImputer(strategy="mean")),
+            ("smote", SMOTE()),
+            ("rf", RandomForestClassifier(n_estimators=200, random_state=12)),
+        ])
+
+        pipe.fit(X_train, y_train)
+        score = float(pipe.score(X_test, y_test))
+
+        bundle = ModelBundle(
+            pipeline=pipe,
+            feature_names=feature_names,
+            score=score,
+        )
+
+        os.makedirs(os.path.dirname(self.model_path), exist_ok=True)
+        joblib.dump(bundle, self.model_path)
+
+        return bundle
+
+    def predict_topk(
+        self,
+        bundle: ModelBundle,
+        huesos: Dict[str, float],
+        top_k: int = 3
+    ) -> List[Tuple[str, float]]:
         """
-        data: dataframe con los datos
-        overfiting: es el método usado para equilibrar las especies con menos datos. Puede ser:
-                    SMOTE(), SVMSMOTE(), BorderlineSMOTE()
-        huesos: diccionario de huesos con el valor indicado por el usuario
-                por ejemplo: {'tarsometatarso':33, 'cubito':80}
+        Devuelve [(especie, prob_en_%), ...] ordenado desc.
+        Si faltan huesos, se imputan por la media (porque el pipeline lleva SimpleImputer).
         """
-        (x, y),(X_train, X_test, Y_train, Y_test), (x_train_res, y_train_res) = self.data_preparation_model(data, 'Especie', overfiting, huesos)
-        # usaremos randomforest
-        rf = RandomForestClassifier(n_estimators=10) 
-        # evalúo el score del modelo
-        score = self.evaluar_modelo('Random Forest', rf, x_train_res, y_train_res, X_test,  Y_test)
-        # creo el modelo definitivo para predecir con todos los datos + oversampling
-        rf = RandomForestClassifier(n_estimators=10)
-        valor_estimado, modelo = self.crear_modelo(x, y,  rf, overfiting, huesos)
-        # ahora, la probabilidad final se calcula como la probabilidad que tiene el modelo de acertar, 
-        # multiplicado por la probabilidad de cada especie
-        return {k: score * v     for k, v in valor_estimado.items()}, score
+        # Crear un DataFrame con TODAS las features esperadas
+        row = {name: None for name in bundle.feature_names}
+        for k, v in huesos.items():
+            if k in row:
+                row[k] = v
+
+        X_new = pd.DataFrame([row], columns=bundle.feature_names)
+
+        proba = bundle.pipeline.predict_proba(X_new)[0]
+        classes = bundle.pipeline.named_steps["rf"].classes_
+
+        # Mantener tu idea original: prob_final = score * prob_modelo
+        weighted = [(cls, float(bundle.score) * float(p)) for cls, p in zip(classes, proba)]
+
+        # ordenar y top_k
+        weighted.sort(key=lambda x: x[1], reverse=True)
+        top = weighted[:top_k]
+
+        # pasar a porcentaje (2 decimales)
+        return [(cls, round(p * 100, 2)) for cls, p in top]

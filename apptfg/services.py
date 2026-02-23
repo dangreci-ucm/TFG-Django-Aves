@@ -1,15 +1,20 @@
 import operator
-from typing import Dict, Any, List, Tuple
+import os
+from typing import Dict, Any, List, Tuple, Optional
 
-from imblearn.over_sampling import SMOTE
-
-from .prediccion import Prediction
 from .read_data import ReadData
+from .prediccion import Prediction, ModelBundle
 
 
-# Cargamos una vez (igual que se hace ahora en views.py)
+# 1) Datos base (excel -> dataframe)
 _data_from_excel = ReadData()
-_prediction = Prediction()
+
+# 2) Modelo persistente en disco (montar como volumen en docker-compose)
+MODEL_PATH = os.environ.get("MODEL_PATH", "/app/model_store/latest_model.joblib")
+_predictor = Prediction(model_path=MODEL_PATH)
+
+# Cache en memoria (para no cargar de disco en cada request)
+_cached_bundle: Optional[ModelBundle] = None
 
 
 def _to_float_or_none(v: Any):
@@ -26,13 +31,6 @@ def _to_float_or_none(v: Any):
 
 
 def build_huesos_from_post(post: Dict[str, Any]) -> Dict[str, float]:
-    """
-    Replica mapeo actual:
-      - coxalL, coxalA, esternon, femur, tibiotarso, tarsometatarso, humero, cubito, radio
-      - craneoA -> craneoancho
-      - craneoL -> craneolongitud
-    y elimina vacíos.
-    """
     todos_huesos = {
         "coxalL": _to_float_or_none(post.get("coxalL")),
         "coxalA": _to_float_or_none(post.get("coxalA")),
@@ -46,31 +44,40 @@ def build_huesos_from_post(post: Dict[str, Any]) -> Dict[str, float]:
         "cubito": _to_float_or_none(post.get("cubito")),
         "radio": _to_float_or_none(post.get("radio")),
     }
-
-    # eliminar vacíos / None
-    huesos = {k: v for k, v in todos_huesos.items() if v is not None}
-
-    return huesos
+    return {k: v for k, v in todos_huesos.items() if v is not None}
 
 
-def percentage(dic: Dict[str, float]) -> Dict[str, float]:
-    for k, v in dic.items():
-        dic[k] = round(v * 100, 2)
-    return dic
+def _get_or_create_model_bundle() -> ModelBundle:
+    global _cached_bundle
+
+    if _cached_bundle is not None:
+        return _cached_bundle
+
+    if _predictor.model_exists():
+        _cached_bundle = _predictor.load_model()
+        return _cached_bundle
+
+    # Si no existe, entrenamos una vez y guardamos
+    _cached_bundle = _predictor.train_and_save(_data_from_excel.data)
+    return _cached_bundle
+
+
+def retrain_model() -> None:
+    """
+    Útil para el futuro: cuando metas nuevos datos en la BD,
+    llamas a esto para reentrenar y dejar un nuevo modelo en disco.
+    """
+    global _cached_bundle
+    _cached_bundle = _predictor.train_and_save(_data_from_excel.data)
 
 
 def calcular_prediccion(huesos: Dict[str, float]) -> List[Tuple[str, float]]:
-    """
-    Devuelve lo mismo que tu view:
-      lista ordenada [(especie, porcentaje), ...]
-    """
     if len(huesos) <= 0:
         raise ValueError("Debe introducir al menos un valor")
 
-    result, score_modelo = _prediction.main(_data_from_excel.data, SMOTE(), huesos)
+    bundle = _get_or_create_model_bundle()
+    # top-3 (como pide tu tutor)
+    result_top3 = _predictor.predict_topk(bundle, huesos, top_k=3)
 
-    # pasar a porcentaje y ordenar
-    result = percentage(result)
-    result_sort = sorted(result.items(), key=operator.itemgetter(1), reverse=True)
-
-    return result_sort
+    # ya viene en porcentaje y ordenado
+    return result_top3
