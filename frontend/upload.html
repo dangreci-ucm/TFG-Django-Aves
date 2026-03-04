@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <title>Subir Excel</title>
+  <link rel="stylesheet" href="/styles.css" />
+</head>
+<body>
+  <div id="navbar"></div>
+
+  <h1>Subir dataset (Excel)</h1>
+  <p>Solo usuarios con sesión iniciada pueden subir un archivo.</p>
+
+  <div id="authWarning" style="display:none;">
+    <p>No has iniciado sesión. Te redirigimos a login…</p>
+  </div>
+
+  <form id="uploadForm" style="display:none;">
+    <input type="file" id="fileInput" accept=".xlsx,.xls" required />
+    <button type="submit">Subir</button>
+  </form>
+
+  <p id="status"></p>
+
+  <script src="/nav.js"></script>
+  <script>
+    async function getCSRFToken() {
+      const cookie = document.cookie
+        .split("; ")
+        .find((row) => row.startsWith("csrftoken="));
+      return cookie ? cookie.split("=")[1] : null;
+    }
+
+    async function checkAuthOrRedirect() {
+      const res = await fetch("/api/me", { credentials: "include" });
+      const data = await res.json();
+
+      if (!data.authenticated) {
+        document.getElementById("authWarning").style.display = "block";
+        // redirección con next para volver aquí
+        const next = encodeURIComponent("/upload.html");
+        window.location.href = `/accounts/login/?next=${next}`;
+        return;
+      }
+
+      document.getElementById("uploadForm").style.display = "block";
+    }
+
+    document.getElementById("uploadForm").addEventListener("submit", async (e) => {
+      e.preventDefault();
+
+      const status = document.getElementById("status");
+      const file = document.getElementById("fileInput").files[0];
+      if (!file) {
+        status.textContent = "Selecciona un archivo.";
+        return;
+      }
+
+      const formData = new FormData();
+      formData.append("file", file);
+
+      const csrftoken = await getCSRFToken();
+      if (!csrftoken) {
+        status.textContent = "No se encontró CSRF token. Inicia sesión y recarga.";
+        return;
+      }
+
+      status.textContent = "Subiendo…";
+
+      try {
+        const res = await fetch("/api/dataset/upload", {
+          method: "POST",
+          credentials: "include",
+          headers: { "X-CSRFToken": csrftoken },
+          body: formData,
+        });
+
+        const data = await res.json().catch(() => ({}));
+
+        if (res.ok) {
+          status.textContent = data.message || "Subida completada.";
+        } else if (res.status === 401 || res.status === 403) {
+          status.textContent = "Sesión no válida. Redirigiendo a login…";
+          const next = encodeURIComponent("/upload.html");
+          window.location.href = `/accounts/login/?next=${next}`;
+        } else {
+          status.textContent = data.error || "Error al subir el archivo.";
+        }
+      } catch (err) {
+        status.textContent = "Error de conexión.";
+      }
+    });
+
+    checkAuthOrRedirect();
+  </script>
+</body>
+</html>

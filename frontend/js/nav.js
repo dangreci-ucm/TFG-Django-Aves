@@ -12,6 +12,14 @@
           <a href="/identificacion.html" title="Identificación" class="nav-link" data-path="/identificacion.html">IDENTIFICACIÓN</a>
           <a href="/descargas.html" title="Recursos" class="nav-link" data-path="/descargas.html">RECURSOS</a>
           <a href="/contacto.html" title="Contacto" class="nav-link" data-path="/contacto.html">CONTACTO</a>
+
+          <!-- NUEVO: oculto por defecto, se mostrará solo si hay sesión -->
+          <a href="/upload.html"
+             title="Subir dataset"
+             class="nav-link"
+             data-path="/upload.html"
+             id="nav-upload-inline"
+             style="display:none;">SUBIR DATASET</a>
         </div>
 
         <div class="menu">
@@ -22,6 +30,13 @@
             <a href="/identificacion.html" role="menuitem">IDENTIFICACIÓN</a>
             <a href="/descargas.html" role="menuitem">RECURSOS</a>
             <a href="/contacto.html" role="menuitem">CONTACTO</a>
+
+            <!-- NUEVO: oculto por defecto, se mostrará solo si hay sesión -->
+            <a href="/upload.html"
+               role="menuitem"
+               id="nav-upload-link"
+               style="display:none;">SUBIR DATASET</a>
+
             <a href="/accounts/login/" role="menuitem" id="nav-login-link" class="nav-link">LOGIN</a>
           </div>
         </div>
@@ -113,6 +128,16 @@
     }
   }
 
+  // NUEVO: helper para mostrar/ocultar el botón Upload en todas las zonas
+  function setUploadVisible(visible) {
+    const ids = ['nav-upload-link', 'nav-upload-inline', 'nav-upload-right'];
+    ids.forEach((id) => {
+      const el = document.getElementById(id);
+      if (!el) return;
+      el.style.display = visible ? '' : 'none';
+    });
+  }
+
   function setLoginLinks() {
     const loginMenu = document.getElementById('nav-login-link');
     const loginInline = document.getElementById('nav-login-inline');
@@ -127,6 +152,9 @@
 
     apply(loginMenu);
     apply(loginInline);
+
+    // cuando NO hay sesión, ocultamos Upload
+    setUploadVisible(false);
   }
 
   function setLogoutLinks() {
@@ -142,6 +170,9 @@
 
     apply(loginMenu);
     apply(loginInline);
+
+    // cuando hay sesión, mostramos Upload
+    setUploadVisible(true);
   }
 
   async function updateAuthLinks(forceLoggedOut = false) {
@@ -153,8 +184,7 @@
     try {
       const data = await fetchMe();
 
-      // Si /api/me usa otra clave, cambiar esta línea:
-      // const loggedIn = !!data.logged_in;
+      // Tu /api/me devuelve {"authenticated": true, "username": "..."}
       const loggedIn = !!data.authenticated;
 
       if (loggedIn) setLogoutLinks();
@@ -186,7 +216,6 @@
           await doLogout();
         } catch (err) {
           console.warn(err);
-          // si falla CSRF, se ve consola
         }
 
         // 3) Revalidar contra backend
@@ -214,7 +243,7 @@
     setupMenuToggle();
     wireLogoutClick();
     normalizeHashHome();
-    updateAuthLinks(); // decide LOGIN/LOGOUT según sesión
+    updateAuthLinks(); // decide LOGIN/LOGOUT + mostrar/ocultar Upload según sesión
   }
 
   document.addEventListener('DOMContentLoaded', insertNavbar);

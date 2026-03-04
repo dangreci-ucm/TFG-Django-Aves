@@ -4,6 +4,8 @@ from django.http import JsonResponse
 from django.views.decorators.http import require_http_methods
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.csrf import ensure_csrf_cookie
+from django.views.decorators.http import require_POST
+from django.contrib.auth.decorators import login_required
 
 from . import services
 
@@ -58,3 +60,17 @@ def calcular(request):
     # 3) Devolver resultados reales
     # Ideal: result_sort debería ser una lista de dicts serializables (strings/floats/ints)
     return JsonResponse({"ok": True, "results": result_sort})
+
+
+@login_required
+@require_POST
+def dataset_upload(request):
+    if 'file' not in request.FILES:
+        return JsonResponse({"error": "No se ha enviado ningún archivo (campo 'file')."}, status=400)
+
+    f = request.FILES['file']
+
+    # aquí: validar extensión, tamaño, etc.
+    # aquí: parsear excel, guardar en BD, etc.
+
+    return JsonResponse({"message": "Archivo recibido correctamente."})
