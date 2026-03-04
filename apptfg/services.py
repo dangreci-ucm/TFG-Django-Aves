@@ -64,8 +64,8 @@ def _get_or_create_model_bundle() -> ModelBundle:
 
 def retrain_model() -> None:
     """
-    Útil para el futuro: cuando metas nuevos datos en la BD,
-    llamas a esto para reentrenar y dejar un nuevo modelo en disco.
+    Útil para el futuro: cuando se metan nuevos datos en la BD,
+    se llama a esto para reentrenar y dejar un nuevo modelo en disco.
     """
     global _cached_bundle
     _cached_bundle = _predictor.train_and_save(_data_from_excel.data)
@@ -76,7 +76,7 @@ def calcular_prediccion(huesos: Dict[str, float]) -> List[Tuple[str, float]]:
         raise ValueError("Debe introducir al menos un valor")
 
     bundle = _get_or_create_model_bundle()
-    # top-3 (como pide tu tutor)
+    
     result_top3 = _predictor.predict_topk(bundle, huesos, top_k=3)
 
     # ya viene en porcentaje y ordenado

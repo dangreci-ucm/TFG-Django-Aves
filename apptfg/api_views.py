@@ -3,12 +3,22 @@ import json
 from django.http import JsonResponse
 from django.views.decorators.http import require_http_methods
 from django.views.decorators.csrf import csrf_exempt
+from django.views.decorators.csrf import ensure_csrf_cookie
 
 from . import services
 
 
 def ping(request):
     return JsonResponse({"status": "ok"})
+
+@ensure_csrf_cookie
+def me(request):
+    if request.user.is_authenticated:
+        return JsonResponse({
+            "authenticated": True,
+            "username": request.user.get_username(),
+        })
+    return JsonResponse({"authenticated": False})
 
 
 @csrf_exempt  # para desarrollo; si se usan sesiones/usuarios, mejor quitarlo y manejar CSRF en frontend

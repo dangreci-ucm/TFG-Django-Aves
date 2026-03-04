@@ -27,29 +27,8 @@
         <h1>Identificación de Restos Óseos en Rapaces Emblemáticas</h1>
     </header>
 
-    <nav>
-        <hr>
-        <div class="navbar">
-            <a href="/" title="Inicio">INICIO</a>
-
-            <div class="navhidden">
-                <a href="/identificacion.html" title="Identificación">IDENTIFICACIÓN</a>
-                <a href="/descargas.html" title="Recursos">RECURSOS</a>
-                <a href="/contacto.html" title="Contacto">CONTACTO</a>
-            </div>
-
-            <div class="menu">
-                <button class="menubtn">
-                    MENÚ <i class="fa fa-caret-down"></i>
-                </button>
-                <div class="menu-content">
-                    <a href="/identificacion.html" title="Identificación">IDENTIFICACIÓN</a>
-                    <a href="/descargas.html" title="Recursos">RECURSOS</a>
-                    <a href="/contacto.html" title="Contacto">CONTACTO</a>
-                </div>
-            </div>
-        </div>
-    </nav>
+    <!-- navbar desde /js/nav.js -->
+    <div id="site-navbar-placeholder" aria-hidden="true"></div>
 
     <div class="text">
 
@@ -155,7 +134,7 @@
             </div>
         </div>
     </footer>
-
+    <script src="/js/nav.js"></script>
     <script>
       const form = document.getElementById("form-identificacion");
       const msgTitle = document.getElementById("msg_title");
