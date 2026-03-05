@@ -1,28 +1,46 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8" />
-  <title>Subir Excel</title>
-  <link rel="stylesheet" href="/styles.css" />
+  <link rel="stylesheet" type="text/css" media="screen" href="/css/same.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+  <link rel="icon" type="image/png" href="/img/favicon_ave.png">
+  <link href="https://fonts.googleapis.com/css2?family=Roboto&display=swap" rel="stylesheet">
+  <meta name="viewport" content="width=device-width">
+  <meta charset="UTF-8">
+  <title>Subir dataset - TFG</title>
+
+  <!-- Carga solo una vez -->
+  <script defer src="/js/nav.js"></script>
 </head>
+
 <body>
-  <div id="navbar"></div>
 
-  <h1>Subir dataset (Excel)</h1>
-  <p>Solo usuarios con sesión iniciada pueden subir un archivo.</p>
+  <header>
+    <h1>Identificación de Restos Óseos en Rapaces Emblemáticas</h1>
+  </header>
 
-  <div id="authWarning" style="display:none;">
-    <p>No has iniciado sesión. Te redirigimos a login…</p>
+  <div id="site-navbar-placeholder"></div>
+
+  <div class="text">
+    <div class="description">
+
+      <h1>Subir dataset (Excel)</h1>
+      <p>Solo usuarios con sesión iniciada pueden subir un archivo.</p>
+
+      <div id="authWarning" style="display:none;">
+        <p>No has iniciado sesión. Te redirigimos a login…</p>
+      </div>
+
+      <form id="uploadForm" style="display:none; padding: 1em;">
+        <input type="file" id="fileInput" accept=".xlsx,.xls" required />
+        <button type="submit">Subir</button>
+      </form>
+
+      <p id="status"></p>
+
+    </div>
   </div>
 
-  <form id="uploadForm" style="display:none;">
-    <input type="file" id="fileInput" accept=".xlsx,.xls" required />
-    <button type="submit">Subir</button>
-  </form>
-
-  <p id="status"></p>
-
-  <script src="/nav.js"></script>
   <script>
     async function getCSRFToken() {
       const cookie = document.cookie
@@ -37,7 +55,6 @@
 
       if (!data.authenticated) {
         document.getElementById("authWarning").style.display = "block";
-        // redirección con next para volver aquí
         const next = encodeURIComponent("/upload.html");
         window.location.href = `/accounts/login/?next=${next}`;
         return;
@@ -93,5 +110,6 @@
 
     checkAuthOrRedirect();
   </script>
+
 </body>
 </html>
