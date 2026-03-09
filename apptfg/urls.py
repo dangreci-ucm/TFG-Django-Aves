@@ -1,19 +1,20 @@
-from django.urls import path
-#from . import views
-from . import api_views  # API
+from django.contrib import admin
+from django.urls import path, include
+
+from apptfg import api_views
+
 
 urlpatterns = [
-    #SE PUEDE LIMPIAR LAS URLs Y DEJAR SOLO LAS API
-    #path('', views.principal, name='principal'),
-    #path('iden', views.iden, name='iden'),
-    #path('descargas',views.descargas,name='descargas'),
-    #path('contacto',views.contacto,name='contacto'),
-    #path('calcular',views.calcular, name='calcular'),
-     
-     #API
-    path('api/ping', api_views.ping, name='api_ping'),
-    path("api/calcular", api_views.calcular, name="api_calcular"),
-    path("api/me", api_views.me, name="api_me"),
+    path("admin/", admin.site.urls),
+
+    # Auth Django
+    path("accounts/", include("django.contrib.auth.urls")),
+
+    # API
+    path("api/ping", api_views.ping, name="ping"),
+    path("api/me", api_views.me, name="me"),
+    path("api/calcular", api_views.calcular, name="calcular"),
     path("api/predictions/history", api_views.prediction_history, name="prediction_history"),
     path("api/dataset/download", api_views.dataset_download, name="dataset_download"),
+    path("api/dataset/upload", api_views.dataset_upload, name="dataset_upload"),
 ]

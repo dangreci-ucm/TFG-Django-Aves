@@ -1,20 +1,13 @@
-import operator
 import os
 from typing import Dict, Any, List, Tuple, Optional
 
-from .read_data import ReadData
 from .prediccion import Prediction, ModelBundle
+from .models import ModelArtifact
 
 
-# 1) Datos base (excel -> dataframe)
-_data_from_excel = ReadData()
-
-# 2) Modelo persistente en disco (montar como volumen en docker-compose)
-MODEL_PATH = os.environ.get("MODEL_PATH", "/app/model_store/latest_model.joblib")
-_predictor = Prediction(model_path=MODEL_PATH)
-
-# Cache en memoria (para no cargar de disco en cada request)
+# Cache en memoria para no cargar el joblib en cada request
 _cached_bundle: Optional[ModelBundle] = None
+_cached_model_path: Optional[str] = None
 
 
 def _to_float_or_none(v: Any):
@@ -47,37 +40,81 @@ def build_huesos_from_post(post: Dict[str, Any]) -> Dict[str, float]:
     return {k: v for k, v in todos_huesos.items() if v is not None}
 
 
-def _get_or_create_model_bundle() -> ModelBundle:
-    global _cached_bundle
+def clear_model_cache() -> None:
+    """
+    Limpia el modelo cacheado en memoria.
+    Debe llamarse cuando se entrena/sube un nuevo modelo.
+    """
+    global _cached_bundle, _cached_model_path
+    _cached_bundle = None
+    _cached_model_path = None
 
-    if _cached_bundle is not None:
+
+def get_active_model_artifact() -> Optional[ModelArtifact]:
+    """
+    Devuelve el modelo activo más reciente.
+    """
+    return (
+        ModelArtifact.objects
+        .filter(is_active=True)
+        .order_by("-created_at")
+        .first()
+    )
+
+
+def get_active_model_path() -> str:
+    """
+    Obtiene la ruta del modelo activo desde la base de datos.
+    """
+    artifact = get_active_model_artifact()
+
+    if not artifact:
+        raise FileNotFoundError("No hay ningún modelo activo registrado en la base de datos.")
+
+    if not artifact.file_path:
+        raise FileNotFoundError("El modelo activo no tiene ruta de archivo asociada.")
+
+    if not os.path.exists(artifact.file_path):
+        raise FileNotFoundError(f"No se encontró el archivo del modelo activo: {artifact.file_path}")
+
+    return artifact.file_path
+
+
+def _get_active_model_bundle() -> ModelBundle:
+    """
+    Carga el ModelBundle activo desde disco.
+    Usa caché en memoria si sigue siendo el mismo archivo.
+    """
+    global _cached_bundle, _cached_model_path
+
+    active_model_path = get_active_model_path()
+
+    if _cached_bundle is not None and _cached_model_path == active_model_path:
         return _cached_bundle
 
-    if _predictor.model_exists():
-        _cached_bundle = _predictor.load_model()
-        return _cached_bundle
+    predictor = Prediction(model_path=active_model_path)
+    _cached_bundle = predictor.load_model()
+    _cached_model_path = active_model_path
 
-    # Si no existe, entrenamos una vez y guardamos
-    _cached_bundle = _predictor.train_and_save(_data_from_excel.data)
     return _cached_bundle
 
 
-def retrain_model() -> None:
+def get_active_model_name() -> str:
     """
-    Útil para el futuro: cuando se metan nuevos datos en la BD,
-    se llama a esto para reentrenar y dejar un nuevo modelo en disco.
+    Nombre de archivo del modelo activo, útil para logs o frontend.
     """
-    global _cached_bundle
-    _cached_bundle = _predictor.train_and_save(_data_from_excel.data)
+    artifact = get_active_model_artifact()
+    if not artifact:
+        return "unknown_model"
+    return os.path.basename(artifact.file_path)
 
 
 def calcular_prediccion(huesos: Dict[str, float]) -> List[Tuple[str, float]]:
     if len(huesos) <= 0:
         raise ValueError("Debe introducir al menos un valor")
 
-    bundle = _get_or_create_model_bundle()
-    
-    result_top3 = _predictor.predict_topk(bundle, huesos, top_k=3)
+    bundle = _get_active_model_bundle()
+    predictor = Prediction(model_path=_cached_model_path)
+    result_top3 = predictor.predict_topk(bundle, huesos, top_k=3)
 
-    # ya viene en porcentaje y ordenado
     return result_top3

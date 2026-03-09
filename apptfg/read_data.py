@@ -6,7 +6,7 @@ class ReadData:
     def __init__(self):
         THIS_FOLDER = os.path.dirname(os.path.abspath(__file__))
        
-        self.path = os.environ.get("DATASET_PATH")
+        self.path = os.path.join(THIS_FOLDER, '/app/storage/datasets/bbdd_rapaces.xlsx')
         self.data = self.read_data_from_excel()
         
 
