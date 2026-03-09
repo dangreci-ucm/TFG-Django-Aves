@@ -15,4 +15,5 @@ urlpatterns = [
     path("api/calcular", api_views.calcular, name="api_calcular"),
     path("api/me", api_views.me, name="api_me"),
     path("api/predictions/history", api_views.prediction_history, name="prediction_history"),
+    path("api/dataset/download", api_views.dataset_download, name="dataset_download"),
 ]

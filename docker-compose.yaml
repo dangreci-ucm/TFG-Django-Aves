@@ -40,6 +40,7 @@ services:
       DATABASE_PASSWORD: "123"
       DATABASE_HOST: "database"
       MODEL_PATH: "/app/model_store/latest_model.joblib"
+      DATASET_PATH: "/app/data/bbdd_rapaces.xlsx"
     depends_on:
       database:
         condition: service_healthy

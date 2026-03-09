@@ -1,4 +1,7 @@
 import json
+import os
+from django.conf import settings
+from django.http import FileResponse
 
 from django.http import JsonResponse
 from django.views.decorators.http import require_http_methods
@@ -110,3 +113,28 @@ def prediction_history(request):
         "ok": True,
         "results": results
     })
+
+
+@login_required
+@require_http_methods(["GET"])
+def dataset_download(request):
+    dataset_path = os.environ.get("DATASET_PATH")
+
+    if not dataset_path:
+        return JsonResponse(
+            {"ok": False, "error": "DATASET_PATH no está configurado."},
+            status=500
+        )
+
+    if not os.path.exists(dataset_path):
+        return JsonResponse(
+            {"ok": False, "error": "No se encontró el dataset actual."},
+            status=404
+        )
+
+    return FileResponse(
+        open(dataset_path, "rb"),
+        as_attachment=True,
+        filename=os.path.basename(dataset_path),
+        content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    )
