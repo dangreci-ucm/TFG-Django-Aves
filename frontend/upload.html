@@ -100,15 +100,21 @@
         });
 
         const data = await res.json().catch(() => ({}));
-
         if (res.ok) {
           status.textContent = data.message || "Subida completada.";
-        } else if (res.status === 401 || res.status === 403) {
-          status.textContent = "Sesión no válida. Redirigiendo a login…";
-          const next = encodeURIComponent("/upload.html");
-          window.location.href = `/accounts/login/?next=${next}`;
         } else {
-          status.textContent = data.error || "Error al subir el archivo.";
+          let msg = data.error || "Error al subir el archivo.";
+
+          if (data.missing_columns) {
+            msg += " Columnas faltantes: " + data.missing_columns.join(", ");
+          }
+
+          if (data.invalid_rows) {
+            msg += " Filas incompletas: " + data.invalid_rows
+              .map(r => `fila ${r.row_excel} (${r.missing_fields.join(", ")})`).join(" | ");
+          }
+
+          status.textContent = msg;
         }
       } catch (err) {
         status.textContent = "Error de conexión.";

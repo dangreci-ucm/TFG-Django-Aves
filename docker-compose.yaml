@@ -39,14 +39,15 @@ services:
       DATABASE_USER: "tfg_user"
       DATABASE_PASSWORD: "123"
       DATABASE_HOST: "database"
-      MODEL_PATH: "/app/model_store/latest_model.joblib"
-      DATASET_PATH: "/app/data/bbdd_rapaces.xlsx"
+      
+      MODEL_DIR: "/app/storage/models"
+      DATASET_DIR: "/app/storage/datasets"
     depends_on:
       database:
         condition: service_healthy
     volumes:
       - .:/app
-      - ./model_store:/app/model_store
+      - ./storage:/app/storage
 
   nginx:
     image: nginx:alpine
