@@ -7,8 +7,9 @@ from django.views.decorators.csrf import ensure_csrf_cookie
 from django.views.decorators.http import require_POST
 from django.contrib.auth.decorators import login_required
 
-from . import services
 
+from . import services
+from .models import PredictionLog
 
 def ping(request):
     return JsonResponse({"status": "ok"})
@@ -56,8 +57,18 @@ def calcular(request):
     except Exception:
         # evita filtrar detalles internos del modelo en la API
         return JsonResponse({"ok": False, "error": "Error interno en la predicción"}, status=500)
-
-    # 3) Devolver resultados reales
+    # 3) Guardar historial de predicciones
+    try:
+        PredictionLog.objects.create(
+            user=request.user if request.user.is_authenticated else None,
+            input_data=huesos,
+            result_data=result_sort,
+            model_name="latest_model"
+        )
+    except Exception:
+        # Si hay fallo en el log, no rompe la predicción
+        pass
+    # 4) Devolver resultados reales
     # Ideal: result_sort debería ser una lista de dicts serializables (strings/floats/ints)
     return JsonResponse({"ok": True, "results": result_sort})
 
@@ -74,3 +85,28 @@ def dataset_upload(request):
     # aquí: parsear excel, guardar en BD, etc.
 
     return JsonResponse({"message": "Archivo recibido correctamente."})
+
+@login_required
+@require_http_methods(["GET"])
+def prediction_history(request):
+    logs = (
+        PredictionLog.objects
+        .filter(user=request.user)
+        .order_by("-created_at")
+    )
+
+    results = []
+    for log in logs:
+        results.append({
+            "id": log.id,
+            "created_at": log.created_at.isoformat(),
+            "username": log.user.username if log.user else "anonymous",
+            "input_data": log.input_data,
+            "result_data": log.result_data,
+            "model_name": log.model_name,
+        })
+
+    return JsonResponse({
+        "ok": True,
+        "results": results
+    })

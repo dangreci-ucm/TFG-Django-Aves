@@ -20,6 +20,14 @@
              data-path="/upload.html"
              id="nav-upload-inline"
              style="display:none;">SUBIR DATASET</a>
+
+          <!-- NUEVO: oculto por defecto, se mostrará solo si hay sesión -->
+          <a href="/historial.html"
+          title="Historial"
+          class="nav-link"
+          data-path="/historial.html"
+          id="nav-history-inline"
+          style="display:none;">HISTORIAL</a>
         </div>
 
         <div class="menu">
@@ -33,9 +41,15 @@
 
             <!-- NUEVO: oculto por defecto, se mostrará solo si hay sesión -->
             <a href="/upload.html"
-               role="menuitem"
-               id="nav-upload-link"
-               style="display:none;">SUBIR DATASET</a>
+            role="menuitem"
+            id="nav-upload-link"
+            style="display:none;">SUBIR DATASET</a>
+
+             <!-- NUEVO: oculto por defecto, se mostrará solo si hay sesión -->
+            <a href="/historial.html"
+            role="menuitem"
+            id="nav-history-link"
+            style="display:none;">HISTORIAL</a>
 
             <a href="/accounts/login/" role="menuitem" id="nav-login-link" class="nav-link">LOGIN</a>
           </div>
@@ -128,7 +142,7 @@
     }
   }
 
-  // NUEVO: helper para mostrar/ocultar el botón Upload en todas las zonas
+  //helper para mostrar/ocultar el botón upload
   function setUploadVisible(visible) {
     const ids = ['nav-upload-link', 'nav-upload-inline', 'nav-upload-right'];
     ids.forEach((id) => {
@@ -136,6 +150,15 @@
       if (!el) return;
       el.style.display = visible ? '' : 'none';
     });
+  }
+  //helper para mostrar/ocultar el botón historial
+  function setHistoryVisible(visible) {
+  const ids = ['nav-history-link', 'nav-history-inline'];
+  ids.forEach((id) => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.style.display = visible ? '' : 'none';
+  });
   }
 
   function setLoginLinks() {
@@ -155,6 +178,7 @@
 
     // cuando NO hay sesión, ocultamos Upload
     setUploadVisible(false);
+    setHistoryVisible(false);
   }
 
   function setLogoutLinks() {
@@ -173,6 +197,7 @@
 
     // cuando hay sesión, mostramos Upload
     setUploadVisible(true);
+    setHistoryVisible(true);
   }
 
   async function updateAuthLinks(forceLoggedOut = false) {

@@ -14,4 +14,5 @@ urlpatterns = [
     path('api/ping', api_views.ping, name='api_ping'),
     path("api/calcular", api_views.calcular, name="api_calcular"),
     path("api/me", api_views.me, name="api_me"),
+    path("api/predictions/history", api_views.prediction_history, name="prediction_history"),
 ]

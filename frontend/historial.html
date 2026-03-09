@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <link rel="stylesheet" type="text/css" media="screen" href="/css/same.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+  <link rel="icon" type="image/png" href="/img/favicon_ave.png">
+  <link href="https://fonts.googleapis.com/css2?family=Roboto&display=swap" rel="stylesheet">
+  <meta name="viewport" content="width=device-width">
+  <meta charset="UTF-8">
+  <title>Historial de predicciones - TFG</title>
+  <script defer src="/js/nav.js"></script>
+</head>
+
+<body>
+  <header>
+    <h1>Identificación de Restos Óseos en Rapaces Emblemáticas</h1>
+  </header>
+
+  <div id="site-navbar-placeholder"></div>
+
+  <div class="text">
+    <div class="description">
+      <h1>Historial de predicciones</h1>
+      <p>En esta página puedes consultar tus predicciones anteriores.</p>
+
+      <div id="authWarning" style="display:none;">
+        <p>No has iniciado sesión. Te redirigimos a login…</p>
+      </div>
+
+      <div id="historyFilters" style="margin-bottom: 2em; padding: 1em; background-color: rgba(29,71,121,.04);">
+        <p><strong>Filtros</strong></p>
+
+        <div style="padding: 1em 0;">
+          <label for="searchInput"><strong>Búsqueda:</strong></label><br>
+          <input
+            type="text"
+            id="searchInput"
+            placeholder="Buscar por usuario, modelo, especie o dato de entrada"
+            style="width: 100%; max-width: 500px; padding: 0.4em; margin-top: 0.5em;"
+          >
+        </div>
+
+        <div style="padding: 1em 0;">
+          <label for="dateFrom"><strong>Desde:</strong></label><br>
+          <input type="date" id="dateFrom" style="padding: 0.4em; margin-top: 0.5em;">
+
+          <br><br>
+
+          <label for="dateTo"><strong>Hasta:</strong></label><br>
+          <input type="date" id="dateTo" style="padding: 0.4em; margin-top: 0.5em;">
+        </div>
+
+        <div style="padding: 1em 0;">
+          <label for="sortOrder"><strong>Orden:</strong></label><br>
+          <select id="sortOrder" style="padding: 0.4em; margin-top: 0.5em;">
+            <option value="desc">Más recientes primero</option>
+            <option value="asc">Más antiguas primero</option>
+          </select>
+        </div>
+
+        <div style="padding: 1em 0;">
+          <button id="clearFilters" type="button">Limpiar filtros</button>
+        </div>
+      </div>
+
+      <div id="historySummary"></div>
+
+      <div id="historyContainer">
+        <p>Cargando historial...</p>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let allLogs = [];
+
+    async function checkAuthOrRedirect() {
+      const res = await fetch("/api/me", { credentials: "include" });
+      const data = await res.json();
+
+      if (!data.authenticated) {
+        document.getElementById("authWarning").style.display = "block";
+        const next = encodeURIComponent("/historial.html");
+        window.location.href = `/accounts/login/?next=${next}`;
+        return false;
+      }
+
+      return true;
+    }
+
+    function formatInputData(inputData) {
+      const entries = Object.entries(inputData || {});
+      if (!entries.length) return "<p>Sin datos de entrada.</p>";
+
+      let html = "<ul>";
+      for (const [key, value] of entries) {
+        html += `<li><strong>${key}</strong>: ${value}</li>`;
+      }
+      html += "</ul>";
+      return html;
+    }
+
+    function formatResultData(resultData) {
+      if (!Array.isArray(resultData) || !resultData.length) {
+        return "<p>Sin resultados.</p>";
+      }
+
+      let html = "<ol>";
+      for (const item of resultData) {
+        if (Array.isArray(item) && item.length >= 2) {
+          html += `<li>${item[0]} - ${item[1]}%</li>`;
+        } else if (typeof item === "object" && item !== null) {
+          html += `<li>${item.species || "Especie desconocida"} - ${item.probability || "?"}%</li>`;
+        }
+      }
+      html += "</ol>";
+      return html;
+    }
+
+    function getSearchableText(log) {
+      const username = (log.username || "").toLowerCase();
+      const modelName = (log.model_name || "").toLowerCase();
+
+      const inputText = Object.entries(log.input_data || {})
+        .map(([key, value]) => `${key} ${value}`)
+        .join(" ")
+        .toLowerCase();
+
+      let resultText = "";
+      if (Array.isArray(log.result_data)) {
+        resultText = log.result_data.map(item => {
+          if (Array.isArray(item) && item.length >= 2) {
+            return `${item[0]} ${item[1]}`;
+          }
+          if (typeof item === "object" && item !== null) {
+            return `${item.species || ""} ${item.probability || ""}`;
+          }
+          return "";
+        }).join(" ").toLowerCase();
+      }
+
+      return `${username} ${modelName} ${inputText} ${resultText}`;
+    }
+
+    function applyFilters() {
+      const searchValue = (document.getElementById("searchInput").value || "").trim().toLowerCase();
+      const dateFromValue = document.getElementById("dateFrom").value;
+      const dateToValue = document.getElementById("dateTo").value;
+      const sortOrder = document.getElementById("sortOrder").value;
+
+      let filteredLogs = [...allLogs];
+
+      if (searchValue) {
+        filteredLogs = filteredLogs.filter(log => {
+          return getSearchableText(log).includes(searchValue);
+        });
+      }
+
+      if (dateFromValue) {
+        const dateFrom = new Date(dateFromValue);
+        dateFrom.setHours(0, 0, 0, 0);
+
+        filteredLogs = filteredLogs.filter(log => {
+          const logDate = new Date(log.created_at);
+          return logDate >= dateFrom;
+        });
+      }
+
+      if (dateToValue) {
+        const dateTo = new Date(dateToValue);
+        dateTo.setHours(23, 59, 59, 999);
+
+        filteredLogs = filteredLogs.filter(log => {
+          const logDate = new Date(log.created_at);
+          return logDate <= dateTo;
+        });
+      }
+
+      filteredLogs.sort((a, b) => {
+        const dateA = new Date(a.created_at).getTime();
+        const dateB = new Date(b.created_at).getTime();
+        return sortOrder === "asc" ? dateA - dateB : dateB - dateA;
+      });
+
+      renderSummary(filteredLogs.length, allLogs.length);
+      renderHistory(filteredLogs);
+    }
+
+    function renderSummary(filteredCount, totalCount) {
+      const summary = document.getElementById("historySummary");
+      summary.innerHTML = `
+        <p>Mostrando <strong>${filteredCount}</strong> predicción(es) de un total de <strong>${totalCount}</strong>.</p>
+      `;
+    }
+
+    function renderHistory(logs) {
+      const container = document.getElementById("historyContainer");
+
+      if (!logs.length) {
+        container.innerHTML = "<p>No hay predicciones que coincidan con los filtros.</p>";
+        return;
+      }
+
+      let html = "";
+
+      for (const log of logs) {
+        const date = new Date(log.created_at).toLocaleString();
+
+        html += `
+          <div style="margin-bottom: 2em; padding: 1em; background-color: rgba(29,71,121,.04);">
+            <h2 style="font-size:18px; margin-bottom:0.5em;">Predicción #${log.id}</h2>
+            <p><strong>Fecha:</strong> ${date}</p>
+            <p><strong>Usuario:</strong> ${log.username}</p>
+            <p><strong>Modelo:</strong> ${log.model_name}</p>
+
+            <p><strong>Datos de entrada:</strong></p>
+            ${formatInputData(log.input_data)}
+
+            <p><strong>Resultados:</strong></p>
+            ${formatResultData(log.result_data)}
+          </div>
+        `;
+      }
+
+      container.innerHTML = html;
+    }
+
+    function wireFilters() {
+      document.getElementById("searchInput").addEventListener("input", applyFilters);
+      document.getElementById("dateFrom").addEventListener("change", applyFilters);
+      document.getElementById("dateTo").addEventListener("change", applyFilters);
+      document.getElementById("sortOrder").addEventListener("change", applyFilters);
+
+      document.getElementById("clearFilters").addEventListener("click", () => {
+        document.getElementById("searchInput").value = "";
+        document.getElementById("dateFrom").value = "";
+        document.getElementById("dateTo").value = "";
+        document.getElementById("sortOrder").value = "desc";
+        applyFilters();
+      });
+    }
+
+    async function loadHistory() {
+      const authenticated = await checkAuthOrRedirect();
+      if (!authenticated) return;
+
+      const container = document.getElementById("historyContainer");
+
+      try {
+        const res = await fetch("/api/predictions/history", {
+          method: "GET",
+          credentials: "include",
+          headers: { "Accept": "application/json" }
+        });
+
+        if (!res.ok) {
+          container.innerHTML = "<p>Error al cargar el historial.</p>";
+          return;
+        }
+
+        const data = await res.json();
+        allLogs = data.results || [];
+        applyFilters();
+      } catch (err) {
+        container.innerHTML = "<p>Error de conexión al cargar el historial.</p>";
+      }
+    }
+
+    wireFilters();
+    loadHistory();
+  </script>
+</body>
+</html>

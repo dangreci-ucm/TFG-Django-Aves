@@ -1,6 +1,6 @@
 from django.db import models
-
-# Create your models here.
+from django.contrib.auth.models import User
+# models.py está pensado para guardar en BBDD. De momento la clase aves no se utiliza
 
 class Aves(models.Model):  
    Especie = models.CharField(max_length=50)  
@@ -20,4 +20,15 @@ class Aves(models.Model):
    def __str__(self):
       return self.Especie
 
+
+class PredictionLog(models.Model):
+    user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    input_data = models.JSONField()
+    result_data = models.JSONField()
+    model_name = models.CharField(max_length=200, default="latest_model")
+
+    def __str__(self):
+        username = self.user.username if self.user else "anonymous"
+        return f"{username} - {self.created_at}"
  
