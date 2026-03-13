@@ -1,0 +1,1 @@
+#No se utiliza de momento. Pero aclara que la carpeta es un paquete

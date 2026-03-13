@@ -9,7 +9,7 @@ from django.views.decorators.http import require_http_methods, require_POST
 from django.views.decorators.csrf import csrf_exempt, ensure_csrf_cookie
 from django.contrib.auth.decorators import login_required
 
-from . import services
+from .services import prediction_services
 from .models import PredictionLog, DatasetArtifact, ModelArtifact
 from .prediccion import Prediction
 
@@ -46,9 +46,9 @@ def calcular(request):
         post_like = request.POST
 
     try:
-        huesos = services.build_huesos_from_post(post_like)
+        huesos = prediction_services.build_huesos_from_post(post_like)
         model_id = post_like.get("model_id")
-        result_sort = services.calcular_prediccion(huesos, model_id=model_id)
+        result_sort = prediction_services.calcular_prediccion(huesos, model_id=model_id)
         
     except ValueError as e:
         return JsonResponse({"ok": False, "error": str(e)}, status=400)
@@ -329,7 +329,7 @@ def dataset_upload(request):
         score=bundle.score,
         is_active=True,
     )
-    services.clear_model_cache()
+    prediction_services.clear_model_cache()
 
     return JsonResponse({
         "ok": True,

@@ -1,8 +1,8 @@
 import os
 from typing import Dict, Any, List, Tuple, Optional
 
-from .prediccion import Prediction, ModelBundle
-from .models import ModelArtifact
+from apptfg.prediccion import Prediction, ModelBundle
+from apptfg.models import ModelArtifact
 
 
 # Cache en memoria para no cargar el joblib en cada request

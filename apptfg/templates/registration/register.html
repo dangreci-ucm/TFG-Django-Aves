@@ -1,25 +1,14 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <!-- CSS base -->
   <link rel="stylesheet" href="/css/same.css">
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
-
-  <!-- Favicon -->
   <link rel="icon" type="image/png" href="/img/favicon_ave.png">
-
-  <!-- Fuente -->
   <link href="https://fonts.googleapis.com/css2?family=Roboto&display=swap" rel="stylesheet">
-
-  <!-- Meta -->
   <meta name="viewport" content="width=device-width">
   <meta charset="UTF-8">
-
-  <title>Login - TFG</title>
-
+  <title>Registro - TFG</title>
   <script defer src="/js/nav.js"></script>
 </head>
-
 <body>
 
 <header>
@@ -30,20 +19,23 @@
 
 <div class="text">
   <div class="description">
+    <h1>Crear cuenta</h1>
 
-    <h1>Iniciar sesión</h1>
+    {% if messages %}
+      {% for message in messages %}
+        <p>{{ message }}</p>
+      {% endfor %}
+    {% endif %}
 
     <form method="post" style="padding:1em;">
-        {% csrf_token %}
-        {{ form.as_p }}
-        <button type="submit">Entrar</button>
+      {% csrf_token %}
+      {{ form.as_p }}
+      <button type="submit">Registrarme</button>
     </form>
-    
-    <div style="margin-top: 1em;">
-    <span>¿No tienes cuenta?</span>
-    <a href="/accounts/register/"><strong>Regístrate aquí</strong></a>
-    </div>
 
+   <p style="margin-top: 1em;">¿Ya tienes cuenta?
+    <a href="/accounts/login/">Inicia sesión</a>
+   </p>
   </div>
 </div>
 

@@ -1,16 +1,16 @@
 from django.contrib import admin
 from django.urls import path, include
 
-from apptfg import api_views
+from apptfg import api_views, views
 
 
 urlpatterns = [
-    path("admin/", admin.site.urls),
+    #path("admin/", admin.site.urls), (ya está la ruta en mysite/urls.py)
 
-    # Auth Django
     path("accounts/", include("django.contrib.auth.urls")),
+    path("accounts/register/", views.register_view, name="register"),
+    path("accounts/verify-email/", views.verify_email_view, name="verify_email"),
 
-    # API
     path("api/ping", api_views.ping, name="ping"),
     path("api/me", api_views.me, name="me"),
     path("api/calcular", api_views.calcular, name="calcular"),
