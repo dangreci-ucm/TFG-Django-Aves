@@ -47,7 +47,9 @@ def calcular(request):
 
     try:
         huesos = services.build_huesos_from_post(post_like)
-        result_sort = services.calcular_prediccion(huesos)
+        model_id = post_like.get("model_id")
+        result_sort = services.calcular_prediccion(huesos, model_id=model_id)
+        
     except ValueError as e:
         return JsonResponse({"ok": False, "error": str(e)}, status=400)
     except Exception:
@@ -74,6 +76,25 @@ def calcular(request):
 
     return JsonResponse({"ok": True, "results": result_sort})
 
+@login_required
+def model_list(request):
+    models = ModelArtifact.objects.order_by("-created_at")
+
+    data = []
+
+    for m in models:
+        data.append({
+            "id": m.id,
+            "name": m.file_path.split("/")[-1],
+            "created_at": m.created_at.isoformat(),
+            "score": m.score,
+            "is_active": m.is_active,
+        })
+
+    return JsonResponse({
+        "ok": True,
+        "models": data
+    })
 
 @login_required
 @require_http_methods(["GET"])

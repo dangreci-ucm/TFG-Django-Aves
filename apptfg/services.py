@@ -109,12 +109,21 @@ def get_active_model_name() -> str:
     return os.path.basename(artifact.file_path)
 
 
-def calcular_prediccion(huesos: Dict[str, float]) -> List[Tuple[str, float]]:
+def calcular_prediccion(huesos: Dict[str, float], model_id=None) -> List[Tuple[str, float]]:
     if len(huesos) <= 0:
-        raise ValueError("Debe introducir al menos un valor")
+            raise ValueError("Debe introducir al menos un valor")
 
-    bundle = _get_active_model_bundle()
-    predictor = Prediction(model_path=_cached_model_path)
+    if model_id:
+            model = ModelArtifact.objects.filter(id=model_id).first()
+    else:
+            model = get_active_model_artifact()
+
+    if not model:
+            raise ValueError("No se encontró modelo")
+
+    predictor = Prediction(model.file_path)
+    bundle = predictor.load_model()
+
     result_top3 = predictor.predict_topk(bundle, huesos, top_k=3)
 
     return result_top3

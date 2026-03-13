@@ -19,6 +19,9 @@
     <meta charset="UTF-8">
 
     <title>Identificación - TFG</title>
+
+    <!-- navbar -->
+    <script defer src="/js/nav.js"></script>
 </head>
 
 <body>
@@ -27,7 +30,6 @@
         <h1>Identificación de Restos Óseos en Rapaces Emblemáticas</h1>
     </header>
 
-    <!-- navbar desde /js/nav.js -->
     <div id="site-navbar-placeholder" aria-hidden="true"></div>
 
     <div class="text">
@@ -48,6 +50,14 @@
             <div id="card">
                 <form id="form-identificacion">
                     <div class="grid_container">
+
+                        <div class="label" style="grid-column: 1 / span 2;">
+                            Modelo:
+                            <select id="modelSelect" name="model_id" class="square">
+                                
+                                <!--option value="">Modelo activo</option-->
+                            </select>
+                        </div>
 
                         <div class="label">
                             Longitud del Coxal:
@@ -107,7 +117,6 @@
 
                     <div id="lista_botones">
                         <input class="button" type="submit" value="Calcular">
-                        <!-- Limpiar: volvemos al estado inicial (guía) sin depender de Django -->
                         <button class="button" type="button" id="btn-limpiar">Limpiar</button>
                     </div>
                 </form>
@@ -134,7 +143,7 @@
             </div>
         </div>
     </footer>
-    <script src="/js/nav.js"></script>
+
     <script>
       const form = document.getElementById("form-identificacion");
       const msgTitle = document.getElementById("msg_title");
@@ -152,13 +161,14 @@
 
       if (btnLimpiar) {
         btnLimpiar.addEventListener("click", () => {
-            form.reset();
-            showGuide();
+          form.reset();
+          showGuide();
         });
-       }
+      }
 
       form.addEventListener("submit", async (e) => {
         e.preventDefault();
+
         msgTitle.textContent = "Calculando...";
         resultsList.innerHTML = "";
 
@@ -173,11 +183,12 @@
             body: new URLSearchParams(formData).toString(),
           });
 
-          // Si Django devuelve HTML de error (500/403), esto evitará romper el parseo JSON
           const contentType = resp.headers.get("content-type") || "";
           const isJson = contentType.includes("application/json");
 
-          const data = isJson ? await resp.json() : { ok: false, error: await resp.text() };
+          const data = isJson
+            ? await resp.json()
+            : { ok: false, error: await resp.text() };
 
           if (!resp.ok || !data.ok) {
             showGuide(data.error || "Error");
@@ -185,6 +196,7 @@
           }
 
           const results = data.results || [];
+
           if (!Array.isArray(results) || results.length === 0) {
             showGuide("Sin resultados");
             return;
@@ -209,7 +221,37 @@
           showGuide("Error de red o servidor");
         }
       });
-    </script>
 
+      async function loadModels() {
+        try {
+          const res = await fetch("/api/models", {
+            credentials: "include"
+          });
+
+          if (!res.ok) return;
+
+          const data = await res.json();
+          if (!data.ok) return;
+
+          const select = document.getElementById("modelSelect");
+          if (!select) return;
+
+          data.models.forEach(m => {
+            const opt = document.createElement("option");
+            opt.value = m.id;
+        
+            let name = m.name.replace(".joblib", "");
+            opt.textContent = name + (m.is_active ? " (activo)" : "") + " — score " + m.score.toFixed(3);
+            opt.title = m.name;
+            select.appendChild(opt);
+          });
+
+        } catch (err) {
+          console.warn("No se pudieron cargar los modelos", err);
+        }
+      }
+
+      loadModels();
+    </script>
 </body>
 </html>
