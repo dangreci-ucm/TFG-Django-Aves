@@ -53,10 +53,11 @@
 
                         <div class="label" style="grid-column: 1 / span 2;">
                             Modelo:
-                            <select id="modelSelect" name="model_id" class="square">
-                                
-                                <!--option value="">Modelo activo</option-->
-                            </select>
+                           <select id="modelSelect" name="model_id" class="square">
+                              <option value="">Modelo activo</option>
+                          </select>
+
+                          <p id="modelHelpText" style="font-size: 14px; margin-top: 6px;"></p>
                         </div>
 
                         <div class="label">
@@ -223,31 +224,61 @@
       });
 
       async function loadModels() {
+        const select = document.getElementById("modelSelect");
+        const helpText = document.getElementById("modelHelpText");
+
+        if (!select || !helpText) return;
+
         try {
+          const meRes = await fetch("/api/me", {
+            credentials: "include"
+          });
+
+          const meData = await meRes.json();
+
+          // Si NO está logueado: solo dejar "Modelo activo"
+          if (!meData.authenticated) {
+            helpText.textContent = "Inicia sesión para seleccionar otros modelos.";
+            return;
+          }
+
+          // Si SÍ está logueado: cargar lista completa
           const res = await fetch("/api/models", {
             credentials: "include"
           });
 
-          if (!res.ok) return;
+          if (!res.ok) {
+            helpText.textContent = "No se pudieron cargar los modelos.";
+            return;
+          }
 
           const data = await res.json();
-          if (!data.ok) return;
 
-          const select = document.getElementById("modelSelect");
-          if (!select) return;
+          if (!data.ok || !Array.isArray(data.models)) {
+            helpText.textContent = "No se pudieron cargar los modelos.";
+            return;
+          }
 
           data.models.forEach(m => {
             const opt = document.createElement("option");
             opt.value = m.id;
-        
-            let name = m.name.replace(".joblib", "");
-            opt.textContent = name + (m.is_active ? " (activo)" : "") + " — score " + m.score.toFixed(3);
-            opt.title = m.name;
+
+            let name = (m.name || `Modelo ${m.id}`).replace(".joblib", "");
+            opt.textContent =
+              name +
+              (m.is_active ? " (activo)" : "") +
+              " — score " + m.score.toFixed(3);
+
+            opt.title = m.name || name;
+
             select.appendChild(opt);
           });
 
+          helpText.textContent = "Puedes seleccionar un modelo concreto o dejar el modelo activo por defecto.";
+
         } catch (err) {
-          console.warn("No se pudieron cargar los modelos", err);
+          helpText.textContent = "No se pudieron cargar los modelos.";
+          console.warn("Error cargando modelos:", err);
         }
       }
 
