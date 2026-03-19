@@ -12,6 +12,7 @@ from django.contrib.auth.decorators import login_required
 from .services import prediction_services
 from .models import PredictionLog, DatasetArtifact, ModelArtifact
 from .prediccion import Prediction
+from apptfg.models import PredictionLog
 
 
 def ping(request):
@@ -120,6 +121,20 @@ def prediction_history(request):
         "ok": True,
         "results": results
     })
+
+@login_required
+@require_POST
+def prediction_delete(request, prediction_id):
+    try:
+        prediction = PredictionLog.objects.get(id=prediction_id, user=request.user)
+    except PredictionLog.DoesNotExist:
+        return JsonResponse(
+            {"ok": False, "error": "Predicción no encontrada"},
+            status=404
+        )
+
+    prediction.delete()
+    return JsonResponse({"ok": True})
 
 
 @login_required

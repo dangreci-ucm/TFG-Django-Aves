@@ -74,6 +74,49 @@
   <script>
     let allLogs = [];
 
+    function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== "") {
+      const cookies = document.cookie.split(";");
+      for (let cookie of cookies) {
+        cookie = cookie.trim();
+        if (cookie.startsWith(name + "=")) {
+          cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+          break;
+        }
+      }
+    }
+    return cookieValue;
+  }
+
+  async function deletePrediction(predictionId) {
+    const confirmed = window.confirm("¿Seguro que quieres borrar esta predicción?");
+    if (!confirmed) return;
+
+    try {
+      const res = await fetch(`/api/predictions/${predictionId}/delete`, {
+        method: "POST",
+        credentials: "include",
+        headers: {
+          "X-CSRFToken": getCookie("csrftoken"),
+          "Accept": "application/json"
+        }
+      });
+
+      const data = await res.json();
+
+      if (!res.ok || !data.ok) {
+        alert(data.error || "No se pudo borrar la predicción.");
+        return;
+      }
+
+      allLogs = allLogs.filter(log => log.id !== predictionId);
+      applyFilters();
+    } catch (err) {
+      alert("Error de conexión al borrar la predicción.");
+    }
+  }
+
     async function checkAuthOrRedirect() {
       const res = await fetch("/api/me", { credentials: "include" });
       const data = await res.json();
@@ -207,8 +250,24 @@
         const date = new Date(log.created_at).toLocaleString();
 
         html += `
-          <div style="margin-bottom: 2em; padding: 1em; background-color: rgba(29,71,121,.04);">
-            <h2 style="font-size:18px; margin-bottom:0.5em;">Predicción #${log.id}</h2>
+          <div
+            data-prediction-row="${log.id}"
+            style="margin-bottom: 2em; padding: 1em; background-color: rgba(29,71,121,.04); position: relative;"
+          >
+            <div style="display:flex; justify-content:space-between; align-items:center; gap:1em;">
+              <h2 style="font-size:18px; margin-bottom:0.5em;">Predicción #${log.id}</h2>
+              <button
+                type="button"
+                class="delete-prediction-btn"
+                data-id="${log.id}"
+                title="Borrar predicción"
+                aria-label="Borrar predicción"
+                style="border:1px solid #999; border-radius:50%; width:30px; height:30px; background:white; cursor:pointer; font-weight:bold;"
+              >
+                ✕
+              </button>
+            </div>
+
             <p><strong>Fecha:</strong> ${date}</p>
             <p><strong>Usuario:</strong> ${log.username}</p>
             <p><strong>Modelo:</strong> ${log.model_name}</p>
@@ -265,8 +324,20 @@
         container.innerHTML = "<p>Error de conexión al cargar el historial.</p>";
       }
     }
+    function wireDeleteButtons() {
+      document.addEventListener("click", (event) => {
+        const btn = event.target.closest(".delete-prediction-btn");
+        if (!btn) return;
+
+        const predictionId = parseInt(btn.dataset.id, 10);
+        if (!predictionId) return;
+
+        deletePrediction(predictionId);
+      });
+   }
 
     wireFilters();
+    wireDeleteButtons();
     loadHistory();
   </script>
 </body>
