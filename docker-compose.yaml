@@ -2,17 +2,19 @@ services:
   database:
     image: postgres:16
     container_name: postgres
+    env_file:
+      - .env
     environment:
-      POSTGRES_DB: tfg_db
-      POSTGRES_USER: tfg_user
-      POSTGRES_PASSWORD: "123"
+      POSTGRES_DB: ${DATABASE_NAME}
+      POSTGRES_USER: ${DATABASE_USER}
+      POSTGRES_PASSWORD: ${DATABASE_PASSWORD}
     volumes:
       - ./db:/var/lib/postgresql/data
       - ./logs:/var/log/postgresql
     ports:
       - "5432:5432"
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U tfg_user -d tfg_db"]
+      test: ["CMD-SHELL", "pg_isready -U ${DATABASE_USER} -d ${DATABASE_NAME}"]
       interval: 2s
       timeout: 3s
       retries: 30
@@ -20,9 +22,16 @@ services:
   web:
     build: .
     container_name: django_backend
+    env_file:
+      - .env
     command: >
       sh -c "
-      until python -c \"import psycopg2; psycopg2.connect(host='database', dbname='tfg_db', user='tfg_user', password='123')\"; do
+      until python -c \"import os, psycopg2; psycopg2.connect(
+        host=os.environ['DATABASE_HOST'],
+        dbname=os.environ['DATABASE_NAME'],
+        user=os.environ['DATABASE_USER'],
+        password=os.environ['DATABASE_PASSWORD']
+      )\"; do
         echo 'Esperando a Postgres.';
         sleep 2;
       done;
@@ -32,24 +41,8 @@ services:
     expose:
       - "8000"
     environment:
-      DJANGO_DEBUG: "False"
-      DJANGO_ALLOWED_HOSTS: "*" #REVISAR ESTO
-      DJANGO_SECRET_KEY: "dev-secret"
-      DATABASE_NAME: "tfg_db"
-      DATABASE_USER: "tfg_user"
-      DATABASE_PASSWORD: "123"
-      DATABASE_HOST: "database"
-      
-      MODEL_DIR: "/app/storage/models"
-      DATASET_DIR: "/app/storage/datasets"
-      
-      EMAIL_BACKEND: "django.core.mail.backends.console.EmailBackend"
-      EMAIL_HOST: "smtp.gmail.com"
-      EMAIL_PORT: "587"
-      EMAIL_HOST_USER: ""
-      EMAIL_HOST_PASSWORD: ""
-      EMAIL_USE_TLS: "True"
-      DEFAULT_FROM_EMAIL: "noreply@tfg.local"
+      MODEL_DIR: ${MODEL_DIR}
+      DATASET_DIR: ${DATASET_DIR}
     depends_on:
       database:
         condition: service_healthy

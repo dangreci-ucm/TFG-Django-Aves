@@ -15,7 +15,7 @@ SECRET_KEY = os.getenv("DJANGO_SECRET_KEY", "dev-secret")
 
 DEBUG = os.getenv("DJANGO_DEBUG", "False") == "True"
 
-ALLOWED_HOSTS = ["localhost", "127.0.0.1", "web", "nginx", "django_backend"]
+ALLOWED_HOSTS = os.getenv("DJANGO_ALLOWED_HOSTS", "localhost,127.0.0.1,web,nginx,django_backend").split(",")
 
 # -------------------------------------------------------------------
 # APPLICATIONS
@@ -81,7 +81,7 @@ DATABASES = {
         'USER': os.getenv('DATABASE_USER', 'tfg_user'),
         'PASSWORD': os.getenv('DATABASE_PASSWORD', '123'),
         'HOST': os.getenv('DATABASE_HOST', 'database'),
-        'PORT': '5432',
+        'PORT': os.getenv('DATABASE_PORT', '5432'),
     }
 }
 
