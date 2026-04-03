@@ -2,6 +2,7 @@ services:
   database:
     image: postgres:16
     container_name: postgres
+    restart: unless-stopped
     env_file:
       - .env
     environment:
@@ -9,19 +10,17 @@ services:
       POSTGRES_USER: ${DATABASE_USER}
       POSTGRES_PASSWORD: ${DATABASE_PASSWORD}
     volumes:
-      - ./db:/var/lib/postgresql/data
-      - ./logs:/var/log/postgresql
-    ports:
-      - "5432:5432"
+      - postgres_data:/var/lib/postgresql/data
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${DATABASE_USER} -d ${DATABASE_NAME}"]
-      interval: 2s
-      timeout: 3s
-      retries: 30
+      interval: 5s
+      timeout: 5s
+      retries: 20
 
   web:
     build: .
     container_name: django_backend
+    restart: unless-stopped
     env_file:
       - .env
     command: >
@@ -32,11 +31,17 @@ services:
         user=os.environ['DATABASE_USER'],
         password=os.environ['DATABASE_PASSWORD']
       )\"; do
-        echo 'Esperando a Postgres.';
+        echo 'Esperando a Postgres...';
         sleep 2;
       done;
       python manage.py migrate &&
-      exec gunicorn mysite.wsgi:application --bind 0.0.0.0:8000 --workers 3 --threads 2 --timeout 120 --log-level info
+      python manage.py collectstatic --noinput &&
+      exec gunicorn mysite.wsgi:application
+      --bind 0.0.0.0:8000
+      --workers 3
+      --threads 2
+      --timeout 120
+      --log-level info
       "
     expose:
       - "8000"
@@ -47,12 +52,14 @@ services:
       database:
         condition: service_healthy
     volumes:
-      - .:/app
       - ./storage:/app/storage
+      - staticfiles_data:/app/staticfiles
+      - media_data:/app/media
 
   nginx:
     image: nginx:alpine
     container_name: nginx_frontend
+    restart: unless-stopped
     depends_on:
       - web
     ports:
@@ -60,3 +67,10 @@ services:
     volumes:
       - ./frontend:/usr/share/nginx/html:ro
       - ./nginx/nginx.conf:/etc/nginx/conf.d/default.conf:ro
+      - staticfiles_data:/usr/share/nginx/django_static:ro
+      - media_data:/usr/share/nginx/django_media:ro
+
+volumes:
+  postgres_data:
+  staticfiles_data:
+  media_data:
