@@ -6,25 +6,28 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 
 WORKDIR /app
 
-# Dependencias del sistema
 RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
     gcc \
     libpq-dev \
+    nginx \
+    gettext-base \
  && rm -rf /var/lib/apt/lists/*
 
-# Instala dependencias Python
 COPY requirements.txt /app/
 RUN python -m pip install --upgrade pip setuptools wheel \
  && pip install -r requirements.txt
 
-# Copia el código de la aplicación
 COPY . /app/
 
-# Usuario no root
-#RUN useradd -m appuser && chown -R appuser /app
-#USER appuser
+RUN mkdir -p /app/staticfiles /var/cache/nginx /var/lib/nginx /var/log/nginx /etc/nginx/templates
 
-EXPOSE 8000
+COPY nginx/render.conf.template /etc/nginx/templates/render.conf.template
+COPY frontend/ /usr/share/nginx/html/
+COPY start.sh /start.sh
 
-CMD ["gunicorn", "mysite.wsgi:application", "--bind", "0.0.0.0:8000", "--workers", "3", "--threads", "2", "--timeout", "120", "--log-level", "info"]
+RUN chmod +x /start.sh
+
+EXPOSE 10000
+
+CMD ["/start.sh"]
