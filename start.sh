@@ -18,7 +18,7 @@ python manage.py migrate
 echo "Recogiendo estáticos..."
 python manage.py collectstatic --noinput
 
-# Opcional, si luego implementas el comando
+# Opcional, si luego se implementa el comando
 # python manage.py init_model_artifacts || true
 
 echo "Arrancando Gunicorn..."

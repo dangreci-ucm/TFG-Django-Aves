@@ -6,17 +6,35 @@ from datetime import datetime
 import pandas as pd
 from django.http import FileResponse, JsonResponse
 from django.views.decorators.http import require_http_methods, require_POST
-from django.views.decorators.csrf import csrf_exempt, ensure_csrf_cookie
+from django.views.decorators.csrf import ensure_csrf_cookie
 from django.contrib.auth.decorators import login_required
 
 from .services import prediction_services
 from .models import PredictionLog, DatasetArtifact, ModelArtifact
 from .prediccion import Prediction
-from apptfg.models import PredictionLog
 
 
 def ping(request):
     return JsonResponse({"status": "ok"})
+
+def require_staff_api(request):
+    """
+    Devuelve una JsonResponse de error si el usuario no está autenticado
+    o no es staff. Si todo va bien, devuelve None.
+    """
+    if not request.user.is_authenticated:
+        return JsonResponse(
+            {"ok": False, "error": "Debes iniciar sesión."},
+            status=401
+        )
+
+    if not request.user.is_staff:
+        return JsonResponse(
+            {"ok": False, "error": "No tienes permisos para realizar esta acción."},
+            status=403
+        )
+
+    return None
 
 
 @ensure_csrf_cookie
@@ -25,11 +43,16 @@ def me(request):
         return JsonResponse({
             "authenticated": True,
             "username": request.user.get_username(),
+            "is_staff": request.user.is_staff,
+            "is_superuser": request.user.is_superuser,
         })
-    return JsonResponse({"authenticated": False})
 
+    return JsonResponse({
+        "authenticated": False,
+        "is_staff": False,
+        "is_superuser": False,
+    })
 
-@csrf_exempt  # para desarrollo; si se usan sesiones/usuarios, mejor quitarlo y manejar CSRF en frontend
 @require_http_methods(["POST"])
 def calcular(request):
     """
@@ -46,22 +69,37 @@ def calcular(request):
     else:
         post_like = request.POST
 
+    model_id = post_like.get("model_id")
+
+    # Solo staff puede elegir manualmente un modelo
+    if model_id and not (request.user.is_authenticated and request.user.is_staff):
+        return JsonResponse(
+            {
+                "ok": False,
+                "error": "No tienes permisos para seleccionar manualmente el modelo."
+            },
+            status=403
+        )
+
     try:
         huesos = prediction_services.build_huesos_from_post(post_like)
-        model_id = post_like.get("model_id")
         result_sort = prediction_services.calcular_prediccion(huesos, model_id=model_id)
-        
+
     except ValueError as e:
         return JsonResponse({"ok": False, "error": str(e)}, status=400)
     except Exception:
         return JsonResponse({"ok": False, "error": "Error interno en la predicción"}, status=500)
 
-    # Intentar usar el modelo activo para nombrarlo mejor en el log
     model_name = "latest_model"
     try:
-        active_model = ModelArtifact.objects.filter(is_active=True).order_by("-created_at").first()
-        if active_model:
-            model_name = os.path.basename(active_model.file_path)
+        if model_id:
+            selected_model = ModelArtifact.objects.filter(id=model_id).first()
+            if selected_model:
+                model_name = os.path.basename(selected_model.file_path)
+        else:
+            active_model = ModelArtifact.objects.filter(is_active=True).order_by("-created_at").first()
+            if active_model:
+                model_name = os.path.basename(active_model.file_path)
     except Exception:
         pass
 
@@ -77,12 +115,16 @@ def calcular(request):
 
     return JsonResponse({"ok": True, "results": result_sort})
 
+
 @login_required
 def model_list(request):
+    staff_error = require_staff_api(request)
+    if staff_error:
+        return staff_error
+
     models = ModelArtifact.objects.order_by("-created_at")
 
     data = []
-
     for m in models:
         data.append({
             "id": m.id,
@@ -140,9 +182,10 @@ def prediction_delete(request, prediction_id):
 @login_required
 @require_http_methods(["GET"])
 def dataset_download(request):
-    """
-    Descarga el dataset activo. Si no hay uno marcado como activo, devuelve error.
-    """
+    staff_error = require_staff_api(request)
+    if staff_error:
+        return staff_error
+
     active_dataset = DatasetArtifact.objects.filter(is_active=True).order_by("-created_at").first()
 
     if not active_dataset:
@@ -166,10 +209,13 @@ def dataset_download(request):
         content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
     )
 
-
 @login_required
 @require_POST
 def dataset_upload(request):
+    staff_error = require_staff_api(request)
+    if staff_error:
+        return staff_error
+
     """
     Flujo:
     1. Validar Excel subido

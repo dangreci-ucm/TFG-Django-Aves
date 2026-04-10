@@ -51,13 +51,17 @@
                 <form id="form-identificacion">
                     <div class="grid_container">
 
-                        <div class="label" style="grid-column: 1 / span 2;">
+                        <div
+                          class="label"
+                          id="modelSelectorWrapper"
+                          style="grid-column: 1 / span 2; display: none;"
+                        >
                             Modelo:
-                           <select id="modelSelect" name="model_id" class="square">
-                              <option value="">Modelo activo</option>
-                          </select>
+                            <select id="modelSelect" name="model_id" class="square">
+                                <option value="">Modelo activo</option>
+                            </select>
 
-                          <p id="modelHelpText" style="font-size: 14px; margin-top: 6px;"></p>
+                            <p id="modelHelpText" style="font-size: 14px; margin-top: 6px;"></p>
                         </div>
 
                         <div class="label">
@@ -151,6 +155,13 @@
       const resultsList = document.getElementById("results_list");
       const btnLimpiar = document.getElementById("btn-limpiar");
 
+      function getCSRFToken() {
+        const cookie = document.cookie
+          .split("; ")
+          .find((row) => row.startsWith("csrftoken="));
+        return cookie ? cookie.split("=")[1] : null;
+      }
+
       function showGuide(customTitle) {
         msgTitle.textContent = customTitle || "Guía de huesos";
         resultsList.innerHTML = `
@@ -176,10 +187,14 @@
         const formData = new FormData(form);
 
         try {
+          const csrftoken = getCSRFToken();
+
           const resp = await fetch("/api/calcular", {
             method: "POST",
+            credentials: "include",
             headers: {
-              "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8"
+              "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8",
+              "X-CSRFToken": csrftoken || "",
             },
             body: new URLSearchParams(formData).toString(),
           });
@@ -223,28 +238,34 @@
         }
       });
 
-      async function loadModels() {
+    async function loadModels() {
+        const wrapper = document.getElementById("modelSelectorWrapper");
         const select = document.getElementById("modelSelect");
         const helpText = document.getElementById("modelHelpText");
 
-        if (!select || !helpText) return;
+        if (!wrapper || !select || !helpText) return;
 
         try {
           const meRes = await fetch("/api/me", {
-            credentials: "include"
+            credentials: "include",
+            cache: "no-store",
           });
 
           const meData = await meRes.json();
 
-          // Si NO está logueado: solo dejar "Modelo activo"
-          if (!meData.authenticated) {
-            helpText.textContent = "Inicia sesión para seleccionar otros modelos.";
+          // Por defecto, oculto para no staff
+          if (!meData.authenticated || !meData.is_staff) {
+            wrapper.style.display = "none";
             return;
           }
 
-          // Si SÍ está logueado: cargar lista completa
+          // Solo staff ve el selector
+          wrapper.style.display = "";
+          helpText.textContent = "Cargando modelos...";
+
           const res = await fetch("/api/models", {
-            credentials: "include"
+            credentials: "include",
+            cache: "no-store",
           });
 
           if (!res.ok) {
@@ -267,17 +288,16 @@
             opt.textContent =
               name +
               (m.is_active ? " (activo)" : "") +
-              " — score " + m.score.toFixed(3);
+              " — score " + Number(m.score).toFixed(3);
 
             opt.title = m.name || name;
-
             select.appendChild(opt);
           });
 
           helpText.textContent = "Puedes seleccionar un modelo concreto o dejar el modelo activo por defecto.";
 
         } catch (err) {
-          helpText.textContent = "No se pudieron cargar los modelos.";
+          wrapper.style.display = "none";
           console.warn("Error cargando modelos:", err);
         }
       }

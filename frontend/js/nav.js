@@ -176,28 +176,30 @@
     apply(loginMenu);
     apply(loginInline);
 
-    // cuando NO hay sesión, ocultamos Upload
+    // cuando NO hay sesión, ocultamos Upload e Historial
     setUploadVisible(false);
     setHistoryVisible(false);
   }
 
-  function setLogoutLinks() {
+  function setLogoutLinks(isStaff = false) {
     const loginMenu = document.getElementById('nav-login-link');
     const loginInline = document.getElementById('nav-login-inline');
 
     const apply = (a) => {
       if (!a) return;
       a.textContent = 'LOGOUT';
-      a.href = '/accounts/logout/'; // aunque se intercepte
+      a.href = '/accounts/logout/';
       a.dataset.action = 'logout';
     };
 
     apply(loginMenu);
     apply(loginInline);
 
-    // cuando hay sesión, mostramos Upload
-    setUploadVisible(true);
+    // Con sesión: historial visible para cualquier usuario autenticado
     setHistoryVisible(true);
+
+    // Upload solo para staff
+    setUploadVisible(!!isStaff);
   }
 
   async function updateAuthLinks(forceLoggedOut = false) {
@@ -208,11 +210,10 @@
 
     try {
       const data = await fetchMe();
-
-      // Tu /api/me devuelve {"authenticated": true, "username": "..."}
       const loggedIn = !!data.authenticated;
+      const isStaff = !!data.is_staff;
 
-      if (loggedIn) setLogoutLinks();
+      if (loggedIn) setLogoutLinks(isStaff);
       else setLoginLinks();
     } catch {
       setLoginLinks();
