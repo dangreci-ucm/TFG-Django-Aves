@@ -1,13 +1,12 @@
-import os
 from typing import Dict, Any, List, Tuple, Optional
 
 from apptfg.prediccion import Prediction, ModelBundle
 from apptfg.models import ModelArtifact
 
 
-# Cache en memoria para no cargar el joblib en cada request
+# Caché en memoria para no deserializar el modelo en cada request
 _cached_bundle: Optional[ModelBundle] = None
-_cached_model_path: Optional[str] = None
+_cached_model_id: Optional[int] = None
 
 
 def _to_float_or_none(v: Any):
@@ -24,6 +23,10 @@ def _to_float_or_none(v: Any):
 
 
 def build_huesos_from_post(post: Dict[str, Any]) -> Dict[str, float]:
+    """
+    Convierte los valores recibidos del formulario/API en floats.
+    Mantiene exactamente los nombres que espera el modelo entrenado.
+    """
     todos_huesos = {
         "coxalL": _to_float_or_none(post.get("coxalL")),
         "coxalA": _to_float_or_none(post.get("coxalA")),
@@ -43,11 +46,11 @@ def build_huesos_from_post(post: Dict[str, Any]) -> Dict[str, float]:
 def clear_model_cache() -> None:
     """
     Limpia el modelo cacheado en memoria.
-    Debe llamarse cuando se entrena/sube un nuevo modelo.
+    Debe llamarse cuando se entrena/sube un nuevo modelo o se cambia el activo.
     """
-    global _cached_bundle, _cached_model_path
+    global _cached_bundle, _cached_model_id
     _cached_bundle = None
-    _cached_model_path = None
+    _cached_model_id = None
 
 
 def get_active_model_artifact() -> Optional[ModelArtifact]:
@@ -62,68 +65,68 @@ def get_active_model_artifact() -> Optional[ModelArtifact]:
     )
 
 
-def get_active_model_path() -> str:
+def get_model_display_name(model: ModelArtifact) -> str:
     """
-    Obtiene la ruta del modelo activo desde la base de datos.
+    Nombre lógico del modelo para mostrar en logs o frontend.
     """
-    artifact = get_active_model_artifact()
-
-    if not artifact:
-        raise FileNotFoundError("No hay ningún modelo activo registrado en la base de datos.")
-
-    if not artifact.file_path:
-        raise FileNotFoundError("El modelo activo no tiene ruta de archivo asociada.")
-
-    if not os.path.exists(artifact.file_path):
-        raise FileNotFoundError(f"No se encontró el archivo del modelo activo: {artifact.file_path}")
-
-    return artifact.file_path
+    if getattr(model, "name", None):
+        return model.name
+    return f"model_{model.id}.joblib"
 
 
-def _get_active_model_bundle() -> ModelBundle:
+def load_bundle_from_artifact(model: ModelArtifact) -> ModelBundle:
     """
-    Carga el ModelBundle activo desde disco.
-    Usa caché en memoria si sigue siendo el mismo archivo.
+    Deserializa el modelo desde PostgreSQL.
     """
-    global _cached_bundle, _cached_model_path
+    if not model.model_blob:
+        raise FileNotFoundError("El modelo no tiene datos binarios almacenados en la base de datos.")
 
-    active_model_path = get_active_model_path()
+    return Prediction.bundle_from_bytes(model.model_blob)
 
-    if _cached_bundle is not None and _cached_model_path == active_model_path:
+
+def _get_bundle_for_model(model: ModelArtifact) -> ModelBundle:
+    """
+    Obtiene el bundle de un modelo concreto usando caché por model.id.
+    """
+    global _cached_bundle, _cached_model_id
+
+    if _cached_bundle is not None and _cached_model_id == model.id:
         return _cached_bundle
 
-    predictor = Prediction(model_path=active_model_path)
-    _cached_bundle = predictor.load_model()
-    _cached_model_path = active_model_path
+    bundle = load_bundle_from_artifact(model)
 
-    return _cached_bundle
+    _cached_bundle = bundle
+    _cached_model_id = model.id
+
+    return bundle
 
 
 def get_active_model_name() -> str:
     """
-    Nombre de archivo del modelo activo, útil para logs o frontend.
+    Nombre del modelo activo, útil para logs o frontend.
     """
     artifact = get_active_model_artifact()
     if not artifact:
         return "unknown_model"
-    return os.path.basename(artifact.file_path)
+    return get_model_display_name(artifact)
 
 
 def calcular_prediccion(huesos: Dict[str, float], model_id=None) -> List[Tuple[str, float]]:
+    """
+    Calcula la predicción usando el modelo activo o uno concreto si se indica model_id.
+    """
     if len(huesos) <= 0:
-            raise ValueError("Debe introducir al menos un valor")
+        raise ValueError("Debe introducir al menos un valor")
 
     if model_id:
-            model = ModelArtifact.objects.filter(id=model_id).first()
+        model = ModelArtifact.objects.filter(id=model_id).first()
     else:
-            model = get_active_model_artifact()
+        model = get_active_model_artifact()
 
     if not model:
-            raise ValueError("No se encontró modelo")
+        raise ValueError("No se encontró modelo")
 
-    predictor = Prediction(model.file_path)
-    bundle = predictor.load_model()
-
-    result_top3 = predictor.predict_topk(bundle, huesos, top_k=3)
+    bundle = _get_bundle_for_model(model)
+    result_top3 = Prediction.predict_topk(bundle, huesos, top_k=3)
 
     return result_top3

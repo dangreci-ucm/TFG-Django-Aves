@@ -1,6 +1,6 @@
-import os
 from dataclasses import dataclass
 from typing import Dict, Any, List, Tuple
+import io
 
 import joblib
 import pandas as pd
@@ -16,10 +16,10 @@ from imblearn.pipeline import Pipeline
 @dataclass
 class ModelBundle:
     """
-    Lo que guardamos en disco.
+    Modelo serializable que guardaremos en PostgreSQL como binario.
     - pipeline: imputación + random forest
-    - feature_names: columnas de entrada esperadas (huesos)
-    - score: accuracy estimada (para mantener tu idea de "prob * score")
+    - feature_names: columnas de entrada esperadas
+    - score: accuracy estimada para ponderar la probabilidad final
     """
     pipeline: Any
     feature_names: List[str]
@@ -27,20 +27,11 @@ class ModelBundle:
 
 
 class Prediction:
-    def __init__(self, model_path: str):
-        self.model_path = model_path
-
-    def model_exists(self) -> bool:
-        return os.path.exists(self.model_path)
-
-    def load_model(self) -> ModelBundle:
-        return joblib.load(self.model_path)
-
-    def train_and_save(self, data: pd.DataFrame) -> ModelBundle:
+    @staticmethod
+    def train(data: pd.DataFrame) -> ModelBundle:
         """
-        Entrena un modelo "global" usando TODAS las columnas de huesos disponibles en el dataset.
-        - Permite predicción aunque el usuario no rellene todos los huesos (imputación por media).
-        - Aplica SMOTE SOLO en train (después de imputar) con pipeline de imblearn.
+        Entrena un modelo usando todas las columnas de huesos disponibles
+        en el dataset y devuelve un ModelBundle en memoria.
         """
         if "Especie" not in data.columns:
             raise ValueError("El dataset no contiene la columna 'Especie'")
@@ -50,12 +41,10 @@ class Prediction:
 
         feature_names = list(X.columns)
 
-        # Split
         X_train, X_test, y_train, y_test = train_test_split(
             X, y, test_size=0.1, random_state=12, stratify=y
         )
 
-        # Pipeline: imputación -> SMOTE -> RandomForest
         pipe = Pipeline(steps=[
             ("imputer", SimpleImputer(strategy="mean")),
             ("smote", SMOTE()),
@@ -71,22 +60,35 @@ class Prediction:
             score=score,
         )
 
-        os.makedirs(os.path.dirname(self.model_path), exist_ok=True)
-        joblib.dump(bundle, self.model_path)
-
         return bundle
 
+    @staticmethod
+    def bundle_to_bytes(bundle: ModelBundle) -> bytes:
+        """
+        Serializa el modelo entrenado a bytes para guardarlo en PostgreSQL.
+        """
+        buffer = io.BytesIO()
+        joblib.dump(bundle, buffer)
+        return buffer.getvalue()
+
+    @staticmethod
+    def bundle_from_bytes(blob: bytes) -> ModelBundle:
+        """
+        Reconstruye un ModelBundle desde los bytes almacenados en PostgreSQL.
+        """
+        buffer = io.BytesIO(blob)
+        return joblib.load(buffer)
+
+    @staticmethod
     def predict_topk(
-        self,
         bundle: ModelBundle,
         huesos: Dict[str, float],
         top_k: int = 3
     ) -> List[Tuple[str, float]]:
         """
         Devuelve [(especie, prob_en_%), ...] ordenado desc.
-        Si faltan huesos, se imputan por la media (porque el pipeline lleva SimpleImputer).
+        Si faltan huesos, se imputan por la media.
         """
-        # Crear un DataFrame con TODAS las features esperadas
         row = {name: None for name in bundle.feature_names}
         for k, v in huesos.items():
             if k in row:
@@ -97,12 +99,12 @@ class Prediction:
         proba = bundle.pipeline.predict_proba(X_new)[0]
         classes = bundle.pipeline.named_steps["rf"].classes_
 
-        # Mantener tu idea original: prob_final = score * prob_modelo
-        weighted = [(cls, float(bundle.score) * float(p)) for cls, p in zip(classes, proba)]
+        weighted = [
+            (cls, float(bundle.score) * float(p))
+            for cls, p in zip(classes, proba)
+        ]
 
-        # ordenar y top_k
         weighted.sort(key=lambda x: x[1], reverse=True)
         top = weighted[:top_k]
 
-        # pasar a porcentaje (2 decimales)
         return [(cls, round(p * 100, 2)) for cls, p in top]

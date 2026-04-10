@@ -1,27 +1,24 @@
 import io
 import json
-import os
 from datetime import datetime
 
 import pandas as pd
-from django.http import FileResponse, JsonResponse
-from django.views.decorators.http import require_http_methods, require_POST
-from django.views.decorators.csrf import ensure_csrf_cookie
 from django.contrib.auth.decorators import login_required
+from django.db import transaction
+from django.http import FileResponse, HttpResponse, JsonResponse
+from django.views.decorators.csrf import ensure_csrf_cookie
+from django.views.decorators.http import require_http_methods, require_POST
 
-from .services import prediction_services
-from .models import PredictionLog, DatasetArtifact, ModelArtifact
+from .models import Aves, DatasetArtifact, ModelArtifact, PredictionLog
 from .prediccion import Prediction
+from .services import prediction_services
 
 
 def ping(request):
-    return JsonResponse({"status": "ok"})
+    return JsonResponse({"ok": True})
+
 
 def require_staff_api(request):
-    """
-    Devuelve una JsonResponse de error si el usuario no está autenticado
-    o no es staff. Si todo va bien, devuelve None.
-    """
     if not request.user.is_authenticated:
         return JsonResponse(
             {"ok": False, "error": "Debes iniciar sesión."},
@@ -53,6 +50,7 @@ def me(request):
         "is_superuser": False,
     })
 
+
 @require_http_methods(["POST"])
 def calcular(request):
     """
@@ -71,7 +69,7 @@ def calcular(request):
 
     model_id = post_like.get("model_id")
 
-    # Solo staff puede elegir manualmente un modelo
+    # Solo staff puede seleccionar manualmente un modelo
     if model_id and not (request.user.is_authenticated and request.user.is_staff):
         return JsonResponse(
             {
@@ -87,19 +85,20 @@ def calcular(request):
 
     except ValueError as e:
         return JsonResponse({"ok": False, "error": str(e)}, status=400)
-    except Exception:
-        return JsonResponse({"ok": False, "error": "Error interno en la predicción"}, status=500)
+    except Exception as e:
+        return JsonResponse(
+            {"ok": False, "error": f"Error interno en la predicción: {str(e)}"},
+            status=500
+        )
 
-    model_name = "latest_model"
+    model_name = "unknown_model"
     try:
         if model_id:
             selected_model = ModelArtifact.objects.filter(id=model_id).first()
             if selected_model:
-                model_name = os.path.basename(selected_model.file_path)
+                model_name = selected_model.name
         else:
-            active_model = ModelArtifact.objects.filter(is_active=True).order_by("-created_at").first()
-            if active_model:
-                model_name = os.path.basename(active_model.file_path)
+            model_name = prediction_services.get_active_model_name()
     except Exception:
         pass
 
@@ -111,9 +110,51 @@ def calcular(request):
             model_name=model_name,
         )
     except Exception:
+        # No rompemos la predicción si falla el log
         pass
 
     return JsonResponse({"ok": True, "results": result_sort})
+
+
+@login_required
+def historial_predicciones(request):
+    """
+    Devuelve el historial del usuario autenticado.
+    """
+    logs = (
+        PredictionLog.objects
+        .filter(user=request.user)
+        .order_by("-created_at")
+    )
+
+    data = []
+    for log in logs:
+        data.append({
+            "id": log.id,
+            "created_at": log.created_at.isoformat(),
+            "input_data": log.input_data,
+            "result_data": log.result_data,
+            "model_name": log.model_name,
+        })
+
+    return JsonResponse({"ok": True, "items": data})
+
+
+@login_required
+@require_http_methods(["DELETE"])
+def borrar_prediccion(request, pred_id):
+    """
+    Borra una predicción solo si pertenece al usuario autenticado.
+    """
+    deleted, _ = PredictionLog.objects.filter(id=pred_id, user=request.user).delete()
+
+    if deleted == 0:
+        return JsonResponse(
+            {"ok": False, "error": "Predicción no encontrada o sin permisos."},
+            status=404
+        )
+
+    return JsonResponse({"ok": True})
 
 
 @login_required
@@ -128,7 +169,7 @@ def model_list(request):
     for m in models:
         data.append({
             "id": m.id,
-            "name": m.file_path.split("/")[-1],
+            "name": m.name,
             "created_at": m.created_at.isoformat(),
             "score": m.score,
             "is_active": m.is_active,
@@ -139,91 +180,155 @@ def model_list(request):
         "models": data
     })
 
-@login_required
-@require_http_methods(["GET"])
-def prediction_history(request):
-    logs = (
-        PredictionLog.objects
-        .filter(user=request.user)
-        .order_by("-created_at")
-    )
-
-    results = []
-    for log in logs:
-        results.append({
-            "id": log.id,
-            "created_at": log.created_at.isoformat(),
-            "username": log.user.username if log.user else "anonymous",
-            "input_data": log.input_data,
-            "result_data": log.result_data,
-            "model_name": log.model_name,
-        })
-
-    return JsonResponse({
-        "ok": True,
-        "results": results
-    })
 
 @login_required
-@require_POST
-def prediction_delete(request, prediction_id):
-    try:
-        prediction = PredictionLog.objects.get(id=prediction_id, user=request.user)
-    except PredictionLog.DoesNotExist:
+@require_http_methods(["POST"])
+def set_active_model(request, model_id):
+    """
+    Marca un modelo como activo. Solo staff.
+    """
+    staff_error = require_staff_api(request)
+    if staff_error:
+        return staff_error
+
+    model = ModelArtifact.objects.filter(id=model_id).first()
+    if not model:
         return JsonResponse(
-            {"ok": False, "error": "Predicción no encontrada"},
+            {"ok": False, "error": "Modelo no encontrado."},
             status=404
         )
 
-    prediction.delete()
-    return JsonResponse({"ok": True})
+    with transaction.atomic():
+        ModelArtifact.objects.update(is_active=False)
+        model.is_active = True
+        model.save(update_fields=["is_active"])
+
+    prediction_services.clear_model_cache()
+
+    return JsonResponse({
+        "ok": True,
+        "message": "Modelo activado correctamente.",
+        "model_id": model.id,
+        "model_name": model.name,
+    })
 
 
 @login_required
 @require_http_methods(["GET"])
 def dataset_download(request):
+    """
+    Descarga el dataset actual reconstruido desde PostgreSQL.
+    Formatos soportados:
+      - /api/dataset/download
+      - /api/dataset/download?format=xlsx
+      - /api/dataset/download?format=csv
+    Solo staff.
+    """
     staff_error = require_staff_api(request)
     if staff_error:
         return staff_error
 
-    active_dataset = DatasetArtifact.objects.filter(is_active=True).order_by("-created_at").first()
-
-    if not active_dataset:
+    dataset_format = (request.GET.get("format") or "xlsx").lower()
+    if dataset_format not in ("xlsx", "csv"):
         return JsonResponse(
-            {"ok": False, "error": "No hay dataset activo disponible."},
+            {"ok": False, "error": "Formato no válido. Usa 'xlsx' o 'csv'."},
+            status=400
+        )
+
+    aves = Aves.objects.all().order_by("id")
+    if not aves.exists():
+        return JsonResponse(
+            {"ok": False, "error": "No hay datos de dataset disponibles en la base de datos."},
             status=404
         )
 
-    dataset_path = active_dataset.file_path
+    rows = []
+    for ave in aves:
+        rows.append({
+            "IDENT": ave.ident,
+            "Especie": ave.especie,
+            "coxalL": ave.coxalL,
+            "coxalA": ave.coxalA,
+            "esternon": ave.esternon,
+            "femur": ave.femur,
+            "tibiotarso": ave.tibiotarso,
+            "tarsometatarso": ave.tarsometatarso,
+            "craneoancho": ave.craneoancho,
+            "craneolongitud": ave.craneolongitud,
+            "humero": ave.humero,
+            "cubito": ave.cubito,
+            "radio": ave.radio,
+        })
 
-    if not os.path.exists(dataset_path):
-        return JsonResponse(
-            {"ok": False, "error": "No se encontró el archivo del dataset activo en disco."},
-            status=404
-        )
+    df = pd.DataFrame(rows)
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+
+    if dataset_format == "csv":
+        csv_buffer = io.StringIO()
+        df.to_csv(csv_buffer, index=False)
+        response = HttpResponse(csv_buffer.getvalue(), content_type="text/csv")
+        response["Content-Disposition"] = f'attachment; filename="dataset_{timestamp}.csv"'
+        return response
+
+    xlsx_buffer = io.BytesIO()
+    with pd.ExcelWriter(xlsx_buffer, engine="openpyxl") as writer:
+        df.to_excel(writer, index=False, sheet_name="Base de datos") #REVISAR
+
+    xlsx_buffer.seek(0)
 
     return FileResponse(
-        open(dataset_path, "rb"),
+        xlsx_buffer,
         as_attachment=True,
-        filename=os.path.basename(dataset_path),
+        filename=f"dataset_{timestamp}.xlsx",
         content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
     )
+
+
+def build_aves_instances_from_df(df: pd.DataFrame):
+    """
+    Convierte el DataFrame del Excel en instancias de Aves.
+    """
+    aves_to_create = []
+
+    for _, row in df.iterrows():
+        aves_to_create.append(
+            Aves(
+                ident=str(row["IDENT"]).strip(),
+                especie=str(row["Especie"]).strip(),
+                coxalL=row["coxalL"],
+                coxalA=row["coxalA"],
+                esternon=row["esternon"],
+                femur=row["femur"],
+                tibiotarso=row["tibiotarso"],
+                tarsometatarso=row["tarsometatarso"],
+                craneoancho=row["craneoancho"],
+                craneolongitud=row["craneolongitud"],
+                humero=row["humero"],
+                cubito=row["cubito"],
+                radio=row["radio"],
+            )
+        )
+
+    return aves_to_create
+
 
 @login_required
 @require_POST
 def dataset_upload(request):
+    """
+    Flujo:
+    1. Validar Excel subido
+    2. Entrenar nuevo modelo en memoria
+    3. Reemplazar la tabla Aves con el dataset actual
+    4. Crear DatasetArtifact
+    5. Crear ModelArtifact con model_blob
+    6. Marcar ambos como activos
+    Solo staff.
+    """
     staff_error = require_staff_api(request)
     if staff_error:
         return staff_error
 
-    """
-    Flujo:
-    1. Validar Excel subido
-    2. Guardarlo en DATASET_DIR con nombre versionado
-    3. Entrenar nuevo modelo y guardarlo en MODEL_DIR
-    4. Crear DatasetArtifact y ModelArtifact
-    5. Marcar ambos como activos
-    """
     if "file" not in request.FILES:
         return JsonResponse(
             {"ok": False, "error": "No se ha enviado ningún archivo."},
@@ -232,7 +337,6 @@ def dataset_upload(request):
 
     f = request.FILES["file"]
 
-    # Validar extensión
     if not (f.name.endswith(".xlsx") or f.name.endswith(".xls")):
         return JsonResponse(
             {"ok": False, "error": "El archivo debe ser un Excel (.xlsx o .xls)."},
@@ -255,7 +359,6 @@ def dataset_upload(request):
         "radio",
     ]
 
-    # Leer bytes una sola vez
     file_bytes = f.read()
 
     try:
@@ -275,7 +378,6 @@ def dataset_upload(request):
             status=400
         )
 
-    # Validar columnas obligatorias
     missing_columns = [col for col in required_columns if col not in df.columns]
     if missing_columns:
         return JsonResponse(
@@ -287,18 +389,14 @@ def dataset_upload(request):
             status=400
         )
 
-    # Quedarnos solo con las columnas esperadas
-    df = df[required_columns]
+    df = df[required_columns].copy()
 
-    # Detectar filas con valores nulos o vacíos
     invalid_rows = []
-
     for idx, row in df.iterrows():
         missing_fields = []
 
         for col in required_columns:
             value = row[col]
-
             if pd.isna(value):
                 missing_fields.append(col)
             elif isinstance(value, str) and not value.strip():
@@ -306,7 +404,7 @@ def dataset_upload(request):
 
         if missing_fields:
             invalid_rows.append({
-                "row_excel": int(idx) + 2,  # +2 por cabecera y base 1 de Excel
+                "row_excel": int(idx) + 2,
                 "missing_fields": missing_fields
             })
 
@@ -320,37 +418,30 @@ def dataset_upload(request):
             status=400
         )
 
-    dataset_dir = os.environ.get("DATASET_DIR")
-    model_dir = os.environ.get("MODEL_DIR")
+    numeric_columns = [
+        "coxalL",
+        "coxalA",
+        "esternon",
+        "femur",
+        "tibiotarso",
+        "tarsometatarso",
+        "craneoancho",
+        "craneolongitud",
+        "humero",
+        "cubito",
+        "radio",
+    ]
 
-    if not dataset_dir or not model_dir:
-        return JsonResponse(
-            {"ok": False, "error": "MODEL_DIR o DATASET_DIR no están configurados."},
-            status=500
-        )
+    for col in numeric_columns:
+        try:
+            df[col] = pd.to_numeric(df[col])
+        except Exception:
+            return JsonResponse(
+                {"ok": False, "error": f"La columna {col} contiene valores no numéricos."},
+                status=400
+            )
 
-    os.makedirs(dataset_dir, exist_ok=True)
-    os.makedirs(model_dir, exist_ok=True)
-
-    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-
-    dataset_filename = f"dataset_{timestamp}.xlsx"
-    dataset_path = os.path.join(dataset_dir, dataset_filename)
-
-    model_filename = f"model_{timestamp}.joblib"
-    model_path = os.path.join(model_dir, model_filename)
-
-    # Guardar Excel en disco
-    try:
-        with open(dataset_path, "wb") as destination:
-            destination.write(file_bytes)
-    except Exception as e:
-        return JsonResponse(
-            {"ok": False, "error": f"No se pudo guardar el dataset en disco: {str(e)}"},
-            status=500
-        )
-
-    # Preparar dataframe para entrenamiento (sin IDENT)
+    # DataFrame para entrenar: quitamos IDENT y dejamos Especie + huesos
     try:
         df_train = df.drop(columns=["IDENT"]).copy()
     except Exception as e:
@@ -359,45 +450,68 @@ def dataset_upload(request):
             status=500
         )
 
-    # Entrenar y guardar nuevo modelo
     try:
-        predictor = Prediction(model_path=model_path)
-        bundle = predictor.train_and_save(df_train)
+        bundle = Prediction.train(df_train)
+        model_bytes = Prediction.bundle_to_bytes(bundle)
     except Exception as e:
         return JsonResponse(
             {"ok": False, "error": f"Error durante el entrenamiento del modelo: {str(e)}"},
             status=500
         )
 
-    # Desactivar dataset/modelo activos anteriores
-    DatasetArtifact.objects.update(is_active=False)
-    ModelArtifact.objects.update(is_active=False)
+    try:
+        aves_to_create = build_aves_instances_from_df(df)
+    except Exception as e:
+        return JsonResponse(
+            {
+                "ok": False,
+                "error": f"Error preparando las filas del dataset para guardar en la base de datos: {str(e)}"
+            },
+            status=500
+        )
 
-    # Registrar nuevo dataset
-    dataset_artifact = DatasetArtifact.objects.create(
-        created_by=request.user if request.user.is_authenticated else None,
-        original_filename=f.name,
-        file_path=dataset_path,
-        row_count=len(df),
-        is_active=True,
-    )
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    model_name = f"model_{timestamp}.joblib"
 
-    # Registrar nuevo modelo
-    model_artifact = ModelArtifact.objects.create(
-        created_by=request.user if request.user.is_authenticated else None,
-        dataset=dataset_artifact,
-        file_path=model_path,
-        score=bundle.score,
-        is_active=True,
-    )
-    prediction_services.clear_model_cache()
+    try:
+        with transaction.atomic():
+            # Reemplazo completo del dataset actual
+            Aves.objects.all().delete()
+            Aves.objects.bulk_create(aves_to_create, batch_size=500)
+
+            DatasetArtifact.objects.update(is_active=False)
+            ModelArtifact.objects.update(is_active=False)
+
+            dataset_artifact = DatasetArtifact.objects.create(
+                created_by=request.user if request.user.is_authenticated else None,
+                original_filename=f.name,
+                row_count=len(df),
+                is_active=True,
+            )
+
+            model_artifact = ModelArtifact.objects.create(
+                created_by=request.user if request.user.is_authenticated else None,
+                dataset=dataset_artifact,
+                name=model_name,
+                model_blob=model_bytes,
+                score=bundle.score,
+                is_active=True,
+            )
+
+            prediction_services.clear_model_cache()
+
+    except Exception as e:
+        return JsonResponse(
+            {"ok": False, "error": f"Error guardando dataset/modelo en la base de datos: {str(e)}"},
+            status=500
+        )
 
     return JsonResponse({
         "ok": True,
-        "message": "Dataset válido, almacenado y modelo reentrenado correctamente.",
+        "message": "Dataset almacenado en PostgreSQL y modelo reentrenado correctamente.",
         "rows": len(df),
         "dataset_id": dataset_artifact.id,
         "model_id": model_artifact.id,
-        "model_filename": model_filename,
+        "model_name": model_name,
         "score": round(bundle.score, 4),
     })

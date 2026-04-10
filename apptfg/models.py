@@ -5,7 +5,9 @@ from datetime import timedelta
 
 
 class Aves(models.Model):
-    Especie = models.CharField(max_length=50)
+    ident = models.CharField(max_length=100)
+    especie = models.CharField(max_length=100)
+
     coxalL = models.DecimalField(max_digits=10, decimal_places=3)
     coxalA = models.DecimalField(max_digits=10, decimal_places=3)
     esternon = models.DecimalField(max_digits=10, decimal_places=3)
@@ -19,7 +21,7 @@ class Aves(models.Model):
     radio = models.DecimalField(max_digits=10, decimal_places=3)
 
     def __str__(self):
-        return self.Especie
+        return f"{self.ident} - {self.especie}"
 
 
 class PredictionLog(models.Model):
@@ -38,13 +40,8 @@ class DatasetArtifact(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
     original_filename = models.CharField(max_length=255)
-    file_path = models.CharField(max_length=500)
     row_count = models.IntegerField(default=0)
     is_active = models.BooleanField(default=False)
-
-    def __str__(self):
-        status = "activo" if self.is_active else "inactivo"
-        return f"Dataset {self.id} - {self.original_filename} - {status}"
 
 
 class ModelArtifact(models.Model):
@@ -57,13 +54,10 @@ class ModelArtifact(models.Model):
         blank=True,
         related_name="models"
     )
-    file_path = models.CharField(max_length=500)
+    name = models.CharField(max_length=255)
+    model_blob = models.BinaryField()
     score = models.FloatField()
     is_active = models.BooleanField(default=False)
-
-    def __str__(self):
-        status = "activo" if self.is_active else "inactivo"
-        return f"Modelo {self.id} - {self.created_at} - {status}"
 
 
 class EmailVerificationCode(models.Model):
