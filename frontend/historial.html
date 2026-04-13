@@ -318,7 +318,7 @@
         }
 
         const data = await res.json();
-        allLogs = data.results || [];
+        allLogs = data.items || [];
         applyFilters();
       } catch (err) {
         container.innerHTML = "<p>Error de conexión al cargar el historial.</p>";
