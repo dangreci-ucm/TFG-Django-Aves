@@ -5,7 +5,8 @@ from .models import Aves, PredictionLog, DatasetArtifact, ModelArtifact
 @admin.register(Aves)
 class AvesAdmin(admin.ModelAdmin):
     list_display = (
-        "Especie",
+        "especie",
+        "ident",
         "coxalL",
         "coxalA",
         "esternon",
@@ -18,7 +19,7 @@ class AvesAdmin(admin.ModelAdmin):
         "cubito",
         "radio",
     )
-    search_fields = ("Especie",)
+    search_fields = ("especie", "ident")
 
 
 @admin.register(PredictionLog)
@@ -40,7 +41,7 @@ class DatasetArtifactAdmin(admin.ModelAdmin):
         "is_active",
     )
     list_filter = ("is_active", "created_at")
-    search_fields = ("original_filename", "file_path", "created_by__username")
+    search_fields = ("original_filename", "created_by__username")
     ordering = ("-created_at",)
 
 
@@ -48,6 +49,7 @@ class DatasetArtifactAdmin(admin.ModelAdmin):
 class ModelArtifactAdmin(admin.ModelAdmin):
     list_display = (
         "id",
+        "name",
         "created_by",
         "created_at",
         "score",
@@ -55,5 +57,5 @@ class ModelArtifactAdmin(admin.ModelAdmin):
         "dataset",
     )
     list_filter = ("is_active", "created_at")
-    search_fields = ("file_path", "created_by__username")
+    search_fields = ("name", "created_by__username")
     ordering = ("-created_at",)
