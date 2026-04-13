@@ -18,5 +18,5 @@ urlpatterns = [
     path("api/dataset/download", api_views.dataset_download, name="dataset_download"),
     path("api/dataset/upload", api_views.dataset_upload, name="dataset_upload"),
     path("api/models", api_views.model_list, name="model_list"),
-    path("api/predictions/<int:prediction_id>/delete", api_views.prediction_delete, name="prediction_delete"),
+    path("api/predictions/<int:prediction_id>/delete", api_views.borrar_prediccion, name="prediction_delete"),
 ]
