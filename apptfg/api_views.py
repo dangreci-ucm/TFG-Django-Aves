@@ -142,11 +142,11 @@ def historial_predicciones(request):
 
 @login_required
 @require_http_methods(["DELETE"])
-def borrar_prediccion(request, pred_id):
+def borrar_prediccion(request, prediction_id):
     """
     Borra una predicción solo si pertenece al usuario autenticado.
     """
-    deleted, _ = PredictionLog.objects.filter(id=pred_id, user=request.user).delete()
+    deleted, _ = PredictionLog.objects.filter(id=prediction_id, user=request.user).delete()
 
     if deleted == 0:
         return JsonResponse(
