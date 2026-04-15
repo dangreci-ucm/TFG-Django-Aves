@@ -95,7 +95,7 @@
 
     try {
       const res = await fetch(`/api/predictions/${predictionId}/delete`, {
-        method: "POST",
+        method: "DELETE",
         credentials: "include",
         headers: {
           "X-CSRFToken": getCookie("csrftoken"),
