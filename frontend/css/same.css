@@ -8,15 +8,23 @@
     --primary: #2f5d50;
     --primary-dark: #244a3f;
     --secondary: #6f9b8d;
+    --accent: #d7e7df;
+
     --bg-page: #f6f4ee;
     --bg-soft: #eef3f0;
+    --bg-soft-2: #f7faf8;
     --bg-card: #ffffff;
+
     --text-main: #24312c;
-    --text-soft: #4f5f58;
-    --border-soft: #d9e3dd;
+    --text-soft: #52615a;
+    --border-soft: #d6e1db;
+
     --shadow-soft: 0 8px 24px rgba(36, 49, 44, 0.08);
-    --radius-md: 10px;
-    --radius-lg: 16px;
+    --shadow-hover: 0 12px 28px rgba(36, 49, 44, 0.12);
+
+    --radius-sm: 10px;
+    --radius-md: 14px;
+    --radius-lg: 18px;
 }
 
 html{
@@ -39,7 +47,7 @@ body {
 /**************************************************************/
 
 header{
-    background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+    background: linear-gradient(135deg, #2f5d50, #2a6656);
     color: #fff;
     margin: 0 auto;
     min-width: 100%;
@@ -52,8 +60,8 @@ header{
 header h1{
     font-size: clamp(24px, 3vw, 34px);
     font-weight: 700;
-    padding: 1.2em 1em;
-    line-height: 1.25;
+    padding: 1.15em 1em;
+    line-height: 1.2;
 }
 
 /**************************************************************/
@@ -80,6 +88,7 @@ header h1{
     position: sticky;
     top: 0;
     z-index: 20;
+    padding: 4px 6px;
 }
 
 .navbar a {
@@ -87,12 +96,12 @@ header h1{
     font-size: 15px;
     color: var(--text-main);
     text-align: center;
-    padding: 14px 18px;
+    padding: 12px 14px;
     text-decoration: none;
     font-weight: 500;
     transition: background-color 0.2s ease, color 0.2s ease;
-    border-radius: 8px;
-    margin: 6px 4px;
+    border-radius: 10px;
+    margin: 4px;
 }
 
 .menu {
@@ -105,12 +114,12 @@ header h1{
     border: none;
     outline: none;
     color: var(--text-main);
-    padding: 14px 18px;
+    padding: 12px 14px;
     background-color: inherit;
     font-family: inherit;
-    margin: 6px 4px;
+    margin: 4px;
     font-weight: 500;
-    border-radius: 8px;
+    border-radius: 10px;
     cursor: pointer;
 }
 
@@ -124,7 +133,7 @@ header h1{
     display: none;
     position: absolute;
     background-color: #ffffff;
-    min-width: 200px;
+    min-width: 220px;
     border: 1px solid var(--border-soft);
     border-radius: 12px;
     box-shadow: 0 12px 24px rgba(36,49,44,0.12);
@@ -158,7 +167,7 @@ nav hr{
 }
 
 /**************************************************************/
-/*-------------- CONTAINER PAGE ----------------------------- */
+/*-------------- CONTENIDO GENERAL -------------------------- */
 /**************************************************************/
 
 .text{
@@ -168,7 +177,7 @@ nav hr{
 }
 
 .description{
-    margin-top: 1.5em;
+    margin-top: 1.4em;
     padding: 2em;
     text-align: left;
     background: var(--bg-card);
@@ -186,20 +195,21 @@ nav hr{
     line-height: 1.2;
 }
 
-.description h2{
+.description h2,
+h2{
     color: var(--primary);
-    margin-top: 1.2em;
+    margin-top: 0.8em;
     margin-bottom: 0.6em;
-    font-size: 22px;
+    font-size: 24px;
+    font-weight: 700;
 }
 
 p{
     word-wrap: break-word;
     color: var(--text-main);
     font-size: 16px;
-    font-weight: normal;
     line-height: 1.65;
-    margin: 0 0 0.75em 0;
+    margin: 0 0 0.9em 0;
     padding: 1em 1.1em;
     text-align: left;
     background-color: var(--bg-soft);
@@ -207,7 +217,7 @@ p{
 }
 
 ul, ol{
-    margin: 0.75em 0 1em 1.5em;
+    margin: 0.8em 0 1em 1.5em;
     color: var(--text-main);
     line-height: 1.6;
 }
@@ -239,7 +249,7 @@ textarea{
     max-width: 520px;
     padding: 0.75em 0.9em;
     border: 1px solid var(--border-soft);
-    border-radius: 10px;
+    border-radius: var(--radius-sm);
     background: #fff;
     color: var(--text-main);
     font-size: 15px;
@@ -260,7 +270,7 @@ button{
     background-color: var(--primary);
     border: none;
     color: #fff;
-    padding: 0.8em 1.2em;
+    padding: 0.82em 1.2em;
     border-radius: 10px;
     font-size: 15px;
     font-weight: 600;
@@ -275,21 +285,126 @@ button:hover{
 }
 
 button:disabled{
-    background-color: #aebbb5;
+    background-color: #acbbb4;
     cursor: not-allowed;
     box-shadow: none;
     transform: none;
 }
 
 /**************************************************************/
-/*-------------- IMAGENES AVES ----------------------------- */
+/*-------------- HISTORIAL / TARJETAS AUX ------------------- */
+/**************************************************************/
+
+.history-card{
+    margin-bottom: 1.5em;
+    padding: 1.2em;
+    background: #ffffff;
+    border: 1px solid var(--border-soft);
+    border-radius: 16px;
+    box-shadow: var(--shadow-soft);
+}
+
+.history-card-header{
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1em;
+    margin-bottom: 1em;
+}
+
+.history-card-title{
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--primary-dark);
+    margin: 0;
+}
+
+.history-meta{
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 12px;
+    margin-bottom: 1em;
+}
+
+.history-meta-item{
+    background: var(--bg-soft);
+    border-radius: 12px;
+    padding: 0.9em 1em;
+    color: var(--text-main);
+}
+
+.history-sections{
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+    align-items: start;
+}
+
+.history-section{
+    background: var(--bg-soft-2);
+    border: 1px solid var(--border-soft);
+    border-radius: 14px;
+    padding: 1em;
+}
+
+.history-section h3{
+    margin: 0 0 0.7em 0;
+    color: var(--primary);
+    font-size: 18px;
+}
+
+.history-section ul,
+.history-section ol{
+    margin: 0 0 0 1.2em;
+}
+
+.history-section li{
+    margin-bottom: 0.45em;
+}
+
+.delete-prediction-btn{
+    border: 1px solid #c7d3cd !important;
+    border-radius: 50% !important;
+    width: 36px !important;
+    height: 36px !important;
+    background: #ffffff !important;
+    color: var(--primary) !important;
+    font-weight: 700 !important;
+    font-size: 18px !important;
+    line-height: 1 !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    padding: 0 !important;
+    box-shadow: 0 4px 10px rgba(36, 49, 44, 0.10);
+    flex-shrink: 0;
+}
+
+.delete-prediction-btn:hover{
+    background: var(--bg-soft) !important;
+    color: var(--primary-dark) !important;
+    transform: none !important;
+}
+
+@media (max-width: 900px){
+    .history-meta{
+        grid-template-columns: 1fr;
+    }
+
+    .history-sections{
+        grid-template-columns: 1fr;
+    }
+}
+
+/**************************************************************/
+/*-------------- AVES / GALERÍA ----------------------------- */
 /**************************************************************/
 
 .bird{
     position: relative;
     width: 210px;
     height: 130px;
-    background: var(--bg-soft);
+    background: #edf3ef;
     margin: 20px;
     border-radius: 16px;
     overflow: hidden;
@@ -299,7 +414,7 @@ button:disabled{
 
 .bird:hover{
     transform: translateY(-4px);
-    box-shadow: 0 12px 24px rgba(36,49,44,0.12);
+    box-shadow: var(--shadow-hover);
 }
 
 .bird img{
@@ -307,7 +422,7 @@ button:disabled{
     margin-left: auto;
     margin-right: auto;
     border-radius: 14px;
-    border: 3px solid var(--secondary);
+    border: 2px solid var(--secondary);
     width: 100%;
     max-width: 180px;
     height: 110px;
@@ -338,20 +453,21 @@ button:disabled{
 
 footer{
     width: 100%;
-    padding: 40px 0px;
+    padding: 28px 0 36px 0;
 }
 
 #pie_pagina{
     max-width: 1200px;
     margin: auto;
     text-align: center;
-    padding: 0px 40px;
+    padding: 0 40px;
 }
 
 #pie_pagina hr{
     border: none;
     height: 1px;
     background-color: var(--border-soft);
+    margin-bottom: 18px;
 }
 
 footer #imgucm{
@@ -362,7 +478,7 @@ footer #imgucm{
 }
 
 footer #name{
-    margin: 0px auto;
+    margin: 0 auto;
     float: left;
     max-width: 40%;
     padding: 1%;
@@ -370,7 +486,7 @@ footer #name{
 }
 
 footer #creativecommons{
-    margin: 0px auto;
+    margin: 0 auto;
     float: left;
     padding: 1%;
 }
