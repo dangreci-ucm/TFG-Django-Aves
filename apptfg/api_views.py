@@ -40,13 +40,13 @@ def me(request):
         return JsonResponse({
             "authenticated": True,
             "username": request.user.get_username(),
+             "id": request.user.id,
             "is_staff": request.user.is_staff,
             "is_superuser": request.user.is_superuser,
         })
 
     return JsonResponse({
         "authenticated": False,
-        "id": request.user.id,
         "is_staff": False,
         "is_superuser": False,
     })
