@@ -73,3 +73,19 @@ class EmailVerificationCode(models.Model):
     @staticmethod
     def default_expiry():
         return timezone.now() + timedelta(minutes=10)
+    
+
+
+class PasswordResetCode(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="password_reset_codes")
+    code = models.CharField(max_length=6)
+    created_at = models.DateTimeField(auto_now_add=True)
+    expires_at = models.DateTimeField()
+    is_used = models.BooleanField(default=False)
+
+    def is_expired(self):
+        return timezone.now() > self.expires_at
+
+    @staticmethod
+    def default_expiry():
+        return timezone.now() + timedelta(minutes=10)

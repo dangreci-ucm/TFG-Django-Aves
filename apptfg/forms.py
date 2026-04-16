@@ -38,3 +38,35 @@ class RegisterForm(forms.Form):
 class VerifyCodeForm(forms.Form):
     email = forms.EmailField(label="Correo electrónico")
     code = forms.CharField(max_length=6, min_length=6, label="Código")
+
+
+class ForgotPasswordForm(forms.Form):
+    email = forms.EmailField(label="Correo electrónico")
+
+    def clean_email(self):
+        email = self.cleaned_data["email"].strip().lower()
+        return email
+
+
+class ResetPasswordForm(forms.Form):
+    email = forms.EmailField(label="Correo electrónico")
+    code = forms.CharField(max_length=6, min_length=6, label="Código")
+    new_password1 = forms.CharField(widget=forms.PasswordInput, label="Nueva contraseña")
+    new_password2 = forms.CharField(widget=forms.PasswordInput, label="Repetir nueva contraseña")
+
+    def clean_email(self):
+        email = self.cleaned_data["email"].strip().lower()
+        return email
+
+    def clean(self):
+        cleaned_data = super().clean()
+        password1 = cleaned_data.get("new_password1")
+        password2 = cleaned_data.get("new_password2")
+
+        if password1 and password2 and password1 != password2:
+            raise forms.ValidationError("Las contraseñas no coinciden.")
+
+        if password1:
+            validate_password(password1)
+
+        return cleaned_data

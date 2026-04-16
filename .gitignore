@@ -15,3 +15,7 @@ __pycache__/
 mysite/settings_migrations.py
 
 requirements_migrations.txt
+
+#No utilizados en Render. Solo en local
+dev-docker-compose.yaml
+docker-compose.yaml

@@ -7,8 +7,7 @@ from django.utils import timezone
 from django.conf import settings
 from django.db import transaction
 
-from apptfg.models import EmailVerificationCode
-
+from apptfg.models import EmailVerificationCode, PasswordResetCode
 
 def generate_code():
     return f"{random.randint(0, 999999):06d}"
@@ -91,3 +90,59 @@ def resend_verification_code(email):
     )
 
     return True, "Te hemos enviado un nuevo código de verificación."
+
+
+def send_password_reset_code(email):
+    email = email.strip().lower()
+
+    user = User.objects.filter(email=email, is_active=True).first()
+    if not user:
+        return False, "No existe ninguna cuenta activa con ese correo."
+
+    code = generate_code()
+
+    PasswordResetCode.objects.create(
+        user=user,
+        code=code,
+        expires_at=timezone.now() + timedelta(minutes=10)
+    )
+
+    send_mail(
+        subject="Código para recuperar contraseña - TFG",
+        message=f"Tu código para restablecer la contraseña es: {code}",
+        from_email=settings.DEFAULT_FROM_EMAIL,
+        recipient_list=[email],
+        fail_silently=False,
+    )
+
+    return True, "Te hemos enviado un código para restablecer tu contraseña."
+
+
+@transaction.atomic
+def reset_password_with_code(email, code, new_password):
+    email = email.strip().lower()
+
+    user = User.objects.filter(email=email, is_active=True).first()
+    if not user:
+        return False, "No existe ninguna cuenta activa con ese correo."
+
+    reset_obj = (
+        PasswordResetCode.objects
+        .filter(user=user, code=code, is_used=False)
+        .order_by("-created_at")
+        .first()
+    )
+
+    if not reset_obj:
+        return False, "El código no es válido."
+
+    if reset_obj.is_expired():
+        return False, "El código ha caducado."
+
+    reset_obj.is_used = True
+    reset_obj.save()
+
+    user.set_password(new_password)
+    user.save()
+
+    return True, "Tu contraseña se ha actualizado correctamente. Ya puedes iniciar sesión."

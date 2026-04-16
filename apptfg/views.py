@@ -3,8 +3,10 @@ from django.contrib import messages
 
 from .services import prediction_services
 from .services import auth_services
-from .forms import RegisterForm, VerifyCodeForm
+from .forms import RegisterForm, VerifyCodeForm, ForgotPasswordForm, ResetPasswordForm
 from django.views.decorators.http import require_http_methods
+
+
 
 def principal(request):
     # frontend/pagina_principal.html
@@ -113,3 +115,55 @@ def resend_verification_code_view(request):
         messages.error(request, message)
 
     return redirect(f"/accounts/verify-email/?email={email}")
+
+
+@require_http_methods(["GET", "POST"])
+def forgot_password_view(request):
+    if request.user.is_authenticated:
+        messages.info(request, "Ya has iniciado sesión.")
+        return redirect("/")
+
+    if request.method == "POST":
+        form = ForgotPasswordForm(request.POST)
+        if form.is_valid():
+            ok, message = auth_services.send_password_reset_code(
+                email=form.cleaned_data["email"]
+            )
+
+            if ok:
+                messages.success(request, message)
+                return redirect(f"/accounts/reset-password/?email={form.cleaned_data['email']}")
+
+            messages.error(request, message)
+    else:
+        form = ForgotPasswordForm()
+
+    return render(request, "registration/forgot_password.html", {"form": form})
+
+
+@require_http_methods(["GET", "POST"])
+def reset_password_view(request):
+    if request.user.is_authenticated:
+        messages.info(request, "Ya has iniciado sesión.")
+        return redirect("/")
+
+    initial_email = request.GET.get("email", "")
+
+    if request.method == "POST":
+        form = ResetPasswordForm(request.POST)
+        if form.is_valid():
+            ok, message = auth_services.reset_password_with_code(
+                email=form.cleaned_data["email"],
+                code=form.cleaned_data["code"],
+                new_password=form.cleaned_data["new_password1"],
+            )
+
+            if ok:
+                messages.success(request, message)
+                return redirect("/accounts/login/")
+
+            messages.error(request, message)
+    else:
+        form = ResetPasswordForm(initial={"email": initial_email})
+
+    return render(request, "registration/reset_password.html", {"form": form})
