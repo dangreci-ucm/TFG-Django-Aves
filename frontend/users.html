@@ -51,6 +51,7 @@
 
   <script>
     let allUsers = [];
+    let currentUserId = null;
 
     function getCSRFToken() {
       const cookie = document.cookie
@@ -76,57 +77,72 @@
     }
 
     async function checkAuthOrRedirect() {
-      const res = await fetch("/api/me", {
-        credentials: "include",
-        cache: "no-store"
-      });
+        const res = await fetch("/api/me", {
+            credentials: "include",
+            cache: "no-store"
+        });
 
-      const data = await res.json();
+        const data = await res.json();
 
-      if (!data.authenticated) {
-        document.getElementById("authWarning").style.display = "block";
-        const next = encodeURIComponent("/users.html");
-        window.location.href = `/accounts/login/?next=${next}`;
-        return false;
-      }
+        if (!data.authenticated) {
+            document.getElementById("authWarning").style.display = "block";
+            const next = encodeURIComponent("/users.html");
+            window.location.href = `/accounts/login/?next=${next}`;
+            return false;
+        }
 
-      if (!data.is_staff) {
-        document.getElementById("staffWarning").style.display = "block";
-        return false;
-      }
+        if (!data.is_staff) {
+            document.getElementById("staffWarning").style.display = "block";
+            return false;
+        }
 
-      document.getElementById("usersBox").style.display = "block";
-      return true;
+        currentUserId = data.id;
+
+        document.getElementById("usersBox").style.display = "block";
+        return true;
     }
 
     function buildUserCard(user) {
-      const staffLabel = user.is_staff ? "Sí" : "No";
-      const superuserLabel = user.is_superuser ? "Sí" : "No";
-      const activeLabel = user.is_active ? "Sí" : "No";
+        const isSelf = currentUserId === user.id;
 
-      const toggleButton = user.is_staff
-        ? `<button type="button" class="toggle-staff-btn" data-user-id="${user.id}" data-new-staff="false">Quitar admin</button>`
-        : `<button type="button" class="toggle-staff-btn" data-user-id="${user.id}" data-new-staff="true">Hacer admin</button>`;
+        const staffLabel = user.is_staff ? "Sí" : "No";
+        const superuserLabel = user.is_superuser ? "Sí" : "No";
+        const activeLabel = user.is_active ? "Sí" : "No";
 
-      const deleteButton = `<button type="button" class="delete-user-btn" data-user-id="${user.id}">Borrar usuario</button>`;
+        let actionsHtml = "";
 
-      return `
-        <div style="margin-bottom: 1.5em; padding: 1em; background-color: rgba(29,71,121,.04); border: 1px solid rgba(29,71,121,.12);">
-          <p><strong>${escapeHtml(user.username)}</strong></p>
-          <p><strong>ID:</strong> ${user.id}</p>
-          <p><strong>Email:</strong> ${escapeHtml(user.email || "—")}</p>
-          <p><strong>Administrador:</strong> ${staffLabel}</p>
-          <p><strong>Superusuario:</strong> ${superuserLabel}</p>
-          <p><strong>Activo:</strong> ${activeLabel}</p>
-          <p><strong>Fecha de alta:</strong> ${formatDate(user.date_joined)}</p>
-          <p><strong>Último login:</strong> ${formatDate(user.last_login)}</p>
+        if (!isSelf) {
+            const toggleButton = user.is_staff
+            ? `<button type="button" class="toggle-staff-btn" data-user-id="${user.id}" data-new-staff="false">Quitar admin</button>`
+            : `<button type="button" class="toggle-staff-btn" data-user-id="${user.id}" data-new-staff="true">Hacer admin</button>`;
 
-          <div style="margin-top: 1em; display: flex; gap: 0.75em; flex-wrap: wrap;">
-            ${toggleButton}
-            ${deleteButton}
-          </div>
-        </div>
-      `;
+            const deleteButton = `<button type="button" class="delete-user-btn" data-user-id="${user.id}">Borrar usuario</button>`;
+
+            actionsHtml = `
+            <div style="margin-top: 1em; display: flex; gap: 0.75em; flex-wrap: wrap;">
+                ${toggleButton}
+                ${deleteButton}
+            </div>
+            `;
+        }
+
+        return `
+            <div style="margin-bottom: 1.5em; padding: 1em; background-color: rgba(29,71,121,.04); border: 1px solid rgba(29,71,121,.12);">
+            <p>
+                <strong>${escapeHtml(user.username)}</strong>
+                ${isSelf ? ' <em>(tú)</em>' : ''}
+            </p>
+            <p><strong>ID:</strong> ${user.id}</p>
+            <p><strong>Email:</strong> ${escapeHtml(user.email || "—")}</p>
+            <p><strong>Administrador:</strong> ${staffLabel}</p>
+            <p><strong>Superusuario:</strong> ${superuserLabel}</p>
+            <p><strong>Activo:</strong> ${activeLabel}</p>
+            <p><strong>Fecha de alta:</strong> ${formatDate(user.date_joined)}</p>
+            <p><strong>Último login:</strong> ${formatDate(user.last_login)}</p>
+
+            ${actionsHtml}
+            </div>
+        `;
     }
 
     function renderUsers() {

@@ -46,6 +46,7 @@ def me(request):
 
     return JsonResponse({
         "authenticated": False,
+        "id": request.user.id,
         "is_staff": False,
         "is_superuser": False,
     })
