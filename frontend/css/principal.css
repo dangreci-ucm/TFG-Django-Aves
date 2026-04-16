@@ -3,30 +3,35 @@
    ========================= */
 
 .description{
-  margin-top: 2em;
-  padding: 2em;
+  margin-top: 1.5em;
+  padding: 2.2em;
   text-align: left;
 }
 
-/* Botón "Comenzar" centrado y consistente */
+.description h1{
+  margin-bottom: 0.8em;
+}
+
+.description p{
+  margin-bottom: 1em;
+}
+
 #button{
-  background-color: #154481;
-  border-radius: 4px;
+  background: linear-gradient(135deg, #2f5d50, #244a3f);
+  border-radius: 12px;
   border: none;
   color: #fff;
-
-  /* centrado */
-  margin: 20px auto;
-
-  /* tamaño estable */
+  margin: 28px auto 10px auto;
   width: fit-content;
-
-  /* el padding lo lleva el enlace */
   padding: 0;
+  box-shadow: 0 10px 22px rgba(47, 93, 80, 0.18);
+  transition: transform 0.18s ease, box-shadow 0.18s ease, filter 0.18s ease;
 }
 
 #button:hover{
-  background-color: #3e77c2;
+  transform: translateY(-2px);
+  box-shadow: 0 14px 28px rgba(47, 93, 80, 0.24);
+  filter: brightness(1.03);
 }
 
 #button a{
@@ -34,33 +39,52 @@
   color: white;
   text-decoration: none;
   font-size: 16px;
+  font-weight: 600;
   text-align: center;
-
-  /* el padding del "botón" */
-  padding: 14px 36px;
+  letter-spacing: 0.2px;
+  padding: 15px 34px;
 }
 
 /* Galería de aves */
 .container_bird{
-  max-width: 1000px;
-  margin: 20px auto 40px auto;
-  padding: 0 20px;
+  max-width: 1100px;
+  margin: 28px auto 10px auto;
+  padding: 0 12px;
 
   display: flex;
   flex-wrap: wrap;
   justify-content: center;
-  align-items: flex-start;
-  gap: 20px; /* separación consistente */
+  align-items: stretch;
+  gap: 24px;
 }
 
-/* Para espaciado anterior, comentar gap
-   y dejar margin en .bird (en same.css ya se tiene margin:20px)
-*/
+.container_bird .bird{
+  margin: 0;
+}
 
-/* Responsive: en móviles, menos ancho disponible */
-@media (max-width: 500px){
+@media (min-width: 900px){
   .container_bird{
-    padding: 0 10px;
+    gap: 28px;
+  }
+}
+
+@media (max-width: 500px){
+  .description{
+    padding: 1.25em;
+  }
+
+  .container_bird{
+    padding: 0 4px;
     gap: 14px;
+    margin-top: 20px;
+  }
+
+  #button{
+    margin-top: 22px;
+  }
+
+  #button a{
+    padding: 14px 24px;
+    font-size: 15px;
   }
 }

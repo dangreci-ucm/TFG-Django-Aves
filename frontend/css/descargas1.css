@@ -1,65 +1,95 @@
-
-@media only screen and (max-width:730px){
+@media only screen and (max-width: 730px){
     #grid_container_pdf {
         position: relative;
         max-width: 100%;
         display: grid;
-        grid-template-columns: 50%;
+        grid-template-columns: 1fr;
+        gap: 20px;
         padding: 2%;
-        
     }
-
 }
 
-@media (min-width:1071px){
-   
+@media (min-width: 731px) and (max-width: 1070px){
     #grid_container_pdf {
         position: relative;
         max-width: 100%;
         display: grid;
-        grid-template-columns: 33% 33% 33%;
+        grid-template-columns: 1fr 1fr;
+        gap: 22px;
         padding: 2%;
-        
     }
-    
 }
 
-
+@media (min-width: 1071px){
+    #grid_container_pdf {
+        position: relative;
+        max-width: 100%;
+        display: grid;
+        grid-template-columns: 1fr 1fr 1fr;
+        gap: 24px;
+        padding: 2%;
+    }
+}
 
 .box_pdf{
-    display: block;
-    border-radius: 5%;
-    border: 5px solid #154481;
-    padding: 2%;
-    width: max-content;
-    height: min-content;
-    background: rgba(29,71,121,.04);
-    margin: 20px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    border-radius: 16px;
+    border: 1px solid #d9e3dd;
+    padding: 1.4em;
+    width: 100%;
+    min-height: 220px;
+    background: #ffffff;
+    box-shadow: 0 8px 24px rgba(36, 49, 44, 0.08);
+    transition: transform 0.18s ease, box-shadow 0.18s ease;
+}
+
+.box_pdf:hover{
+    transform: translateY(-3px);
+    box-shadow: 0 12px 28px rgba(36, 49, 44, 0.12);
 }
 
 .box_pdf h3{
-    margin: 2%;
-    text-align: justify;
-    flex-wrap: wrap;
+    margin: 0 0 0.8em 0;
+    text-align: left;
+    line-height: 1.4;
+    color: #2f5d50;
+    font-size: 20px;
+    font-weight: 700;
+}
+
+.box_pdf p{
+    margin-bottom: 1em;
 }
 
 .pdf{
     position: relative;
-    width: fit-content;
+    width: 100%;
     display: block;
+    margin-top: auto;
 }
 
 .btn_pdf {
-    background-color: #154481;
+    background: linear-gradient(135deg, #2f5d50, #244a3f);
     border: none;
     color: white;
-    padding: 12px 16px;
-    font-size: 16px;
+    padding: 12px 18px;
+    font-size: 15px;
+    font-weight: 600;
     cursor: pointer;
     display: inline-flex;
-    margin-left: auto;
-    margin-right: auto;
-    margin-top: 3%;
+    align-items: center;
+    gap: 8px;
+    margin-top: 8px;
+    border-radius: 10px;
+    box-shadow: 0 6px 14px rgba(47, 93, 80, 0.18);
+    transition: background-color 0.2s ease, transform 0.15s ease;
+}
+
+.btn_pdf:hover {
+    background: #244a3f;
+    transform: translateY(-1px);
 }
 
 a{
@@ -67,10 +97,5 @@ a{
 }
 
 i{
-    padding: 2%
-}
-  
-  /* Darker background on mouse-over */
-.btn_pdf:hover {
-background-color: #3e77c2;
+    padding: 0;
 }
