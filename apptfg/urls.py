@@ -19,4 +19,10 @@ urlpatterns = [
     path("api/dataset/upload", api_views.dataset_upload, name="dataset_upload"),
     path("api/models", api_views.model_list, name="model_list"),
     path("api/predictions/<int:prediction_id>/delete", api_views.borrar_prediccion, name="prediction_delete"),
+
+    path("api/models/<int:model_id>/activate", api_views.set_active_model, name="set_active_model"), #REVISAR
+
+    path("api/users", api_views.user_list, name="user_list"),
+    path("api/users/<int:user_id>/set-staff", api_views.user_set_staff, name="user_set_staff"),
+    path("api/users/<int:user_id>/delete", api_views.user_delete, name="user_delete"),
 ]

@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <link rel="stylesheet" type="text/css" media="screen" href="/css/same.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+  <link rel="icon" type="image/png" href="/img/favicon_ave.png">
+  <link href="https://fonts.googleapis.com/css2?family=Roboto&display=swap" rel="stylesheet">
+  <meta name="viewport" content="width=device-width">
+  <meta charset="UTF-8">
+  <title>Gestión de usuarios - TFG</title>
+  <script defer src="/js/nav.js"></script>
+</head>
+
+<body>
+  <header>
+    <h1>Identificación de Restos Óseos en Rapaces Emblemáticas</h1>
+  </header>
+
+  <div id="site-navbar-placeholder"></div>
+
+  <div class="text">
+    <div class="description">
+      <h1>Gestión de usuarios</h1>
+      <p>Solo los administradores pueden ver y gestionar usuarios.</p>
+
+      <div id="authWarning" style="display:none;">
+        <p>No has iniciado sesión. Te redirigimos a login…</p>
+      </div>
+
+      <div id="staffWarning" style="display:none;">
+        <p>No tienes permisos para acceder a esta página.</p>
+      </div>
+
+      <div id="usersBox" style="display:none; margin-top: 1.5em;">
+        <p id="status" style="margin-bottom: 1em;"></p>
+
+        <div style="margin-bottom: 1.5em;">
+          <label for="searchInput"><strong>Buscar usuario:</strong></label><br>
+          <input
+            type="text"
+            id="searchInput"
+            placeholder="Buscar por username o email"
+            style="width: 100%; max-width: 420px; padding: 0.4em; margin-top: 0.5em;"
+          >
+        </div>
+
+        <div id="usersList"></div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let allUsers = [];
+
+    function getCSRFToken() {
+      const cookie = document.cookie
+        .split("; ")
+        .find((row) => row.startsWith("csrftoken="));
+      return cookie ? cookie.split("=")[1] : null;
+    }
+
+    function escapeHtml(value) {
+      return String(value ?? "")
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+    }
+
+    function formatDate(value) {
+      if (!value) return "—";
+      const d = new Date(value);
+      if (Number.isNaN(d.getTime())) return value;
+      return d.toLocaleString("es-ES");
+    }
+
+    async function checkAuthOrRedirect() {
+      const res = await fetch("/api/me", {
+        credentials: "include",
+        cache: "no-store"
+      });
+
+      const data = await res.json();
+
+      if (!data.authenticated) {
+        document.getElementById("authWarning").style.display = "block";
+        const next = encodeURIComponent("/users.html");
+        window.location.href = `/accounts/login/?next=${next}`;
+        return false;
+      }
+
+      if (!data.is_staff) {
+        document.getElementById("staffWarning").style.display = "block";
+        return false;
+      }
+
+      document.getElementById("usersBox").style.display = "block";
+      return true;
+    }
+
+    function buildUserCard(user) {
+      const staffLabel = user.is_staff ? "Sí" : "No";
+      const superuserLabel = user.is_superuser ? "Sí" : "No";
+      const activeLabel = user.is_active ? "Sí" : "No";
+
+      const toggleButton = user.is_staff
+        ? `<button type="button" class="toggle-staff-btn" data-user-id="${user.id}" data-new-staff="false">Quitar admin</button>`
+        : `<button type="button" class="toggle-staff-btn" data-user-id="${user.id}" data-new-staff="true">Hacer admin</button>`;
+
+      const deleteButton = `<button type="button" class="delete-user-btn" data-user-id="${user.id}">Borrar usuario</button>`;
+
+      return `
+        <div style="margin-bottom: 1.5em; padding: 1em; background-color: rgba(29,71,121,.04); border: 1px solid rgba(29,71,121,.12);">
+          <p><strong>${escapeHtml(user.username)}</strong></p>
+          <p><strong>ID:</strong> ${user.id}</p>
+          <p><strong>Email:</strong> ${escapeHtml(user.email || "—")}</p>
+          <p><strong>Administrador:</strong> ${staffLabel}</p>
+          <p><strong>Superusuario:</strong> ${superuserLabel}</p>
+          <p><strong>Activo:</strong> ${activeLabel}</p>
+          <p><strong>Fecha de alta:</strong> ${formatDate(user.date_joined)}</p>
+          <p><strong>Último login:</strong> ${formatDate(user.last_login)}</p>
+
+          <div style="margin-top: 1em; display: flex; gap: 0.75em; flex-wrap: wrap;">
+            ${toggleButton}
+            ${deleteButton}
+          </div>
+        </div>
+      `;
+    }
+
+    function renderUsers() {
+      const search = (document.getElementById("searchInput").value || "").trim().toLowerCase();
+      const list = document.getElementById("usersList");
+
+      const filtered = allUsers.filter((u) => {
+        const username = (u.username || "").toLowerCase();
+        const email = (u.email || "").toLowerCase();
+        return username.includes(search) || email.includes(search);
+      });
+
+      if (!filtered.length) {
+        list.innerHTML = "<p>No hay usuarios que coincidan con la búsqueda.</p>";
+        return;
+      }
+
+      list.innerHTML = filtered.map(buildUserCard).join("");
+    }
+
+    async function loadUsers() {
+      const status = document.getElementById("status");
+      status.textContent = "Cargando usuarios...";
+
+      try {
+        const res = await fetch("/api/users", {
+          method: "GET",
+          credentials: "include",
+          cache: "no-store",
+          headers: { "Accept": "application/json" }
+        });
+
+        const data = await res.json().catch(() => ({}));
+
+        if (!res.ok || !data.ok) {
+          status.textContent = data.error || "No se pudieron cargar los usuarios.";
+          return;
+        }
+
+        allUsers = Array.isArray(data.items) ? data.items : [];
+        renderUsers();
+        status.textContent = `Usuarios cargados: ${allUsers.length}`;
+      } catch (err) {
+        status.textContent = "Error de red al cargar usuarios.";
+      }
+    }
+
+    async function setStaff(userId, newIsStaff) {
+      const status = document.getElementById("status");
+      const csrftoken = getCSRFToken();
+
+      try {
+        const res = await fetch(`/api/users/${userId}/set-staff`, {
+          method: "POST",
+          credentials: "include",
+          headers: {
+            "Content-Type": "application/json",
+            "X-CSRFToken": csrftoken || ""
+          },
+          body: JSON.stringify({ is_staff: newIsStaff })
+        });
+
+        const data = await res.json().catch(() => ({}));
+
+        if (!res.ok || !data.ok) {
+          status.textContent = data.error || "No se pudo actualizar el usuario.";
+          return;
+        }
+
+        status.textContent = data.message || "Permisos actualizados.";
+        await loadUsers();
+      } catch (err) {
+        status.textContent = "Error de red al actualizar permisos.";
+      }
+    }
+
+    async function deleteUser(userId) {
+      const status = document.getElementById("status");
+      const csrftoken = getCSRFToken();
+
+      try {
+        const res = await fetch(`/api/users/${userId}/delete`, {
+          method: "DELETE",
+          credentials: "include",
+          headers: {
+            "X-CSRFToken": csrftoken || "",
+            "Accept": "application/json"
+          }
+        });
+
+        const data = await res.json().catch(() => ({}));
+
+        if (!res.ok || !data.ok) {
+          status.textContent = data.error || "No se pudo borrar el usuario.";
+          return;
+        }
+
+        status.textContent = data.message || "Usuario borrado.";
+        await loadUsers();
+      } catch (err) {
+        status.textContent = "Error de red al borrar usuario.";
+      }
+    }
+
+    document.addEventListener("click", async (e) => {
+      const toggleBtn = e.target.closest(".toggle-staff-btn");
+      if (toggleBtn) {
+        const userId = toggleBtn.getAttribute("data-user-id");
+        const newStaff = toggleBtn.getAttribute("data-new-staff") === "true";
+
+        const ok = window.confirm(
+          newStaff
+            ? "¿Dar permisos de administrador a este usuario?"
+            : "¿Quitar permisos de administrador a este usuario?"
+        );
+
+        if (!ok) return;
+
+        await setStaff(userId, newStaff);
+        return;
+      }
+
+      const deleteBtn = e.target.closest(".delete-user-btn");
+      if (deleteBtn) {
+        const userId = deleteBtn.getAttribute("data-user-id");
+        const ok = window.confirm("¿Seguro que quieres borrar este usuario? Esta acción no se puede deshacer.");
+
+        if (!ok) return;
+
+        await deleteUser(userId);
+      }
+    });
+
+    document.getElementById("searchInput").addEventListener("input", renderUsers);
+
+    (async function init() {
+      const allowed = await checkAuthOrRedirect();
+      if (!allowed) return;
+      await loadUsers();
+    })();
+  </script>
+</body>
+</html>

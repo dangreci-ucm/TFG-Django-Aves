@@ -1,7 +1,7 @@
 import io
 import json
 from datetime import datetime
-
+from django.contrib.auth.models import User
 import pandas as pd
 from django.contrib.auth.decorators import login_required
 from django.db import transaction
@@ -163,7 +163,7 @@ def model_list(request):
     if staff_error:
         return staff_error
 
-    models = ModelArtifact.objects.order_by("-created_at")
+    models = ModelArtifact.objects.exclude(name__iexact="unknown").order_by("-created_at")
 
     data = []
     for m in models:
@@ -514,4 +514,149 @@ def dataset_upload(request):
         "model_id": model_artifact.id,
         "model_name": model_name,
         "score": round(bundle.score, 4),
+    })
+
+
+
+
+@login_required
+@require_http_methods(["GET"])
+def user_list(request):
+    """
+    Lista de usuarios. Solo staff.
+    """
+    staff_error = require_staff_api(request)
+    if staff_error:
+        return staff_error
+
+    users = User.objects.order_by("id")
+
+    items = []
+    for u in users:
+        items.append({
+            "id": u.id,
+            "username": u.username,
+            "email": u.email,
+            "is_staff": u.is_staff,
+            "is_superuser": u.is_superuser,
+            "is_active": u.is_active,
+            "date_joined": u.date_joined.isoformat() if u.date_joined else None,
+            "last_login": u.last_login.isoformat() if u.last_login else None,
+        })
+
+    return JsonResponse({
+        "ok": True,
+        "items": items,
+    })
+
+
+@login_required
+@require_http_methods(["POST"])
+def user_set_staff(request, user_id):
+    """
+    Cambia el permiso is_staff de un usuario. Solo staff.
+    Body JSON esperado:
+    {
+      "is_staff": true/false
+    }
+    """
+    staff_error = require_staff_api(request)
+    if staff_error:
+        return staff_error
+
+    target = User.objects.filter(id=user_id).first()
+    if not target:
+        return JsonResponse(
+            {"ok": False, "error": "Usuario no encontrado."},
+            status=404
+        )
+
+    try:
+        payload = json.loads(request.body.decode("utf-8") or "{}")
+    except json.JSONDecodeError:
+        return JsonResponse(
+            {"ok": False, "error": "JSON inválido."},
+            status=400
+        )
+
+    if "is_staff" not in payload:
+        return JsonResponse(
+            {"ok": False, "error": "Falta el campo is_staff."},
+            status=400
+        )
+
+    new_is_staff = bool(payload["is_staff"])
+
+    # Evitar que un admin se quite a sí mismo el rol staff
+    if request.user.id == target.id and not new_is_staff:
+        return JsonResponse(
+            {"ok": False, "error": "No puedes quitarte a ti mismo el permiso de administrador."},
+            status=403
+        )
+
+    # Evitar dejar el sistema sin staff
+    if target.is_staff and not new_is_staff:
+        remaining_staff = User.objects.filter(is_staff=True).exclude(id=target.id).count()
+        if remaining_staff == 0:
+            return JsonResponse(
+                {"ok": False, "error": "No puedes quitar el permiso al último administrador."},
+                status=400
+            )
+
+    target.is_staff = new_is_staff
+    target.save(update_fields=["is_staff"])
+
+    return JsonResponse({
+        "ok": True,
+        "message": "Permisos actualizados correctamente.",
+        "user": {
+            "id": target.id,
+            "username": target.username,
+            "is_staff": target.is_staff,
+        }
+    })
+
+
+@login_required
+@require_http_methods(["DELETE"])
+def user_delete(request, user_id):
+    """
+    Borra un usuario. Solo staff.
+    """
+    staff_error = require_staff_api(request)
+    if staff_error:
+        return staff_error
+
+    target = User.objects.filter(id=user_id).first()
+    if not target:
+        return JsonResponse(
+            {"ok": False, "error": "Usuario no encontrado."},
+            status=404
+        )
+
+    if request.user.id == target.id:
+        return JsonResponse(
+            {"ok": False, "error": "No puedes borrarte a ti mismo desde esta pantalla."},
+            status=403
+        )
+
+    if target.is_superuser:
+        return JsonResponse(
+            {"ok": False, "error": "No se permite borrar superusuarios desde esta pantalla."},
+            status=403
+        )
+
+    if target.is_staff:
+        remaining_staff = User.objects.filter(is_staff=True).exclude(id=target.id).count()
+        if remaining_staff == 0:
+            return JsonResponse(
+                {"ok": False, "error": "No puedes borrar al último administrador."},
+                status=400
+            )
+
+    target.delete()
+
+    return JsonResponse({
+        "ok": True,
+        "message": "Usuario eliminado correctamente."
     })

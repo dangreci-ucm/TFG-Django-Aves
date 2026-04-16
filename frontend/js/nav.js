@@ -28,6 +28,13 @@
           data-path="/historial.html"
           id="nav-history-inline"
           style="display:none;">HISTORIAL</a>
+
+          <a href="/users.html"
+          title="Gestionar usuarios"
+          class="nav-link"
+          data-path="/users.html"
+          id="nav-users-inline"
+          style="display:none;">USUARIOS</a>
         </div>
 
         <div class="menu">
@@ -50,7 +57,10 @@
             role="menuitem"
             id="nav-history-link"
             style="display:none;">HISTORIAL</a>
-
+            <a href="/users.html"
+            role="menuitem"
+            id="nav-users-link"
+            style="display:none;">USUARIOS</a>
             <a href="/accounts/login/" role="menuitem" id="nav-login-link" class="nav-link">LOGIN</a>
           </div>
         </div>
@@ -161,6 +171,15 @@
   });
   }
 
+  function setUsersVisible(visible) {
+  const ids = ['nav-users-link', 'nav-users-inline'];
+  ids.forEach((id) => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.style.display = visible ? '' : 'none';
+  });
+  }
+
   function setLoginLinks() {
     const loginMenu = document.getElementById('nav-login-link');
     const loginInline = document.getElementById('nav-login-inline');
@@ -179,6 +198,7 @@
     // cuando NO hay sesión, ocultamos Upload e Historial
     setUploadVisible(false);
     setHistoryVisible(false);
+    setUsersVisible(false);
   }
 
   function setLogoutLinks(isStaff = false) {
@@ -199,7 +219,9 @@
     setHistoryVisible(true);
 
     // Upload solo para staff
-    setUploadVisible(!!isStaff);
+    setUploadVisible(isStaff);
+      // Gestión de usuarios solo para staff
+    setUsersVisible(isStaff);
   }
 
   async function updateAuthLinks(forceLoggedOut = false) {

@@ -4,3 +4,14 @@ logs/
 __pycache__/
 *.pyc
 .env
+
+# Entorno virtual
+.venv/
+
+# Bases de datos locales
+*.sqlite3
+
+# Archivos de migración temporales
+mysite/settings_migrations.py
+
+requirements_migrations.txt
