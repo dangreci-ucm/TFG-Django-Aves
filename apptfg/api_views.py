@@ -130,12 +130,19 @@ def historial_predicciones(request):
 
     data = []
     for log in logs:
+        # limpiar nombre del modelo (quitar .joblib si existe)
+        clean_model_name = (
+            log.model_name.rsplit(".", 1)[0]
+            if log.model_name else None
+        )
+
         data.append({
             "id": log.id,
             "created_at": log.created_at.isoformat(),
             "input_data": log.input_data,
             "result_data": log.result_data,
-            "model_name": log.model_name,
+            "model_name": clean_model_name,
+            "user": request.user.username,  # para evitar undefined
         })
 
     return JsonResponse({"ok": True, "items": data})
