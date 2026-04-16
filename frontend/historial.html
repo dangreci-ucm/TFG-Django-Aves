@@ -246,7 +246,7 @@
 
       let html = "";
 
-      for (const log of logs) {
+      logs.forEach((log, index) => {
         const date = new Date(log.created_at).toLocaleString();
 
         html += `
@@ -255,7 +255,9 @@
             style="margin-bottom: 2em; padding: 1em; background-color: rgba(29,71,121,.04); position: relative;"
           >
             <div style="display:flex; justify-content:space-between; align-items:center; gap:1em;">
-              <h2 style="font-size:18px; margin-bottom:0.5em;">Predicción #${log.id}</h2>
+              <h2 style="font-size:18px; margin-bottom:0.5em;">
+                Predicción #${index + 1}
+              </h2>
               <button
                 type="button"
                 class="delete-prediction-btn"
@@ -269,8 +271,8 @@
             </div>
 
             <p><strong>Fecha:</strong> ${date}</p>
-            <p><strong>Usuario:</strong> ${log.user}</p>
-            <p><strong>Modelo:</strong> ${log.model_name}</p>
+            <p><strong>Usuario:</strong> ${log.user || "—"}</p>
+            <p><strong>Modelo:</strong> ${log.model_name || "—"}</p>
 
             <p><strong>Datos de entrada:</strong></p>
             ${formatInputData(log.input_data)}
@@ -279,7 +281,7 @@
             ${formatResultData(log.result_data)}
           </div>
         `;
-      }
+      });
 
       container.innerHTML = html;
     }
