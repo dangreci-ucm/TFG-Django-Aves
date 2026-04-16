@@ -130,7 +130,7 @@
 
       return true;
     }
-
+    
     function formatInputData(inputData) {
       const entries = Object.entries(inputData || {});
       if (!entries.length) return "<p>Sin datos de entrada.</p>";
@@ -250,35 +250,35 @@
         const date = new Date(log.created_at).toLocaleString();
 
         html += `
-          <div
-            data-prediction-row="${log.id}"
-            style="margin-bottom: 2em; padding: 1em; background-color: rgba(29,71,121,.04); position: relative;"
-          >
-            <div style="display:flex; justify-content:space-between; align-items:center; gap:1em;">
-              <h2 style="font-size:18px; margin-bottom:0.5em;">
-                Predicción #${index + 1}
-              </h2>
+          <div class="history-card" data-prediction-row="${log.id}">
+            <div class="history-card-header">
+              <h2 class="history-card-title">Predicción #${index + 1}</h2>
               <button
                 type="button"
                 class="delete-prediction-btn"
                 data-id="${log.id}"
                 title="Borrar predicción"
                 aria-label="Borrar predicción"
-                style="border:1px solid #999; border-radius:50%; width:30px; height:30px; background:white; cursor:pointer; font-weight:bold;"
-              >
-                ✕
-              </button>
+              >×</button>
             </div>
 
-            <p><strong>Fecha:</strong> ${date}</p>
-            <p><strong>Usuario:</strong> ${log.user || "—"}</p>
-            <p><strong>Modelo:</strong> ${log.model_name || "—"}</p>
+            <div class="history-meta">
+              <div class="history-meta-item"><strong>Fecha:</strong> ${date}</div>
+              <div class="history-meta-item"><strong>Usuario:</strong> ${log.user || "—"}</div>
+              <div class="history-meta-item"><strong>Modelo:</strong> ${log.model_name || "—"}</div>
+            </div>
 
-            <p><strong>Datos de entrada:</strong></p>
-            ${formatInputData(log.input_data)}
+            <div class="history-sections">
+              <div class="history-section">
+                <h3>Datos de entrada</h3>
+                ${formatInputData(log.input_data)}
+              </div>
 
-            <p><strong>Resultados:</strong></p>
-            ${formatResultData(log.result_data)}
+              <div class="history-section">
+                <h3>Resultados</h3>
+                ${formatResultData(log.result_data)}
+              </div>
+            </div>
           </div>
         `;
       });
