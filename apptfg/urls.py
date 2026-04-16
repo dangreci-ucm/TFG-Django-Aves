@@ -10,9 +10,11 @@ urlpatterns = [
     path("accounts/", include("django.contrib.auth.urls")),
     path("accounts/register/", views.register_view, name="register"),
     path("accounts/verify-email/", views.verify_email_view, name="verify_email"),
+    path("accounts/resend-verification-code/", views.resend_verification_code_view, name="resend_verification_code"),
 
     path("api/ping", api_views.ping, name="ping"),
     path("api/me", api_views.me, name="me"),
+    
     path("api/calcular", api_views.calcular, name="calcular"),
     path("api/predictions/history", api_views.historial_predicciones, name="prediction_history"),
     path("api/dataset/download", api_views.dataset_download, name="dataset_download"),

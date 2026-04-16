@@ -66,3 +66,28 @@ def verify_email_code(email, code):
     user.save()
 
     return True, "Cuenta verificada correctamente. Ya puedes iniciar sesión."
+
+def resend_verification_code(email):
+    email = email.strip().lower()
+
+    user = User.objects.filter(email=email, is_active=False).first()
+    if not user:
+        return False, "No existe ninguna cuenta pendiente de verificación con ese correo."
+
+    code = generate_code()
+
+    EmailVerificationCode.objects.create(
+        user=user,
+        code=code,
+        expires_at=timezone.now() + timedelta(minutes=10)
+    )
+
+    send_mail(
+        subject="Nuevo código de verificación - TFG",
+        message=f"Tu nuevo código de verificación es: {code}",
+        from_email=settings.DEFAULT_FROM_EMAIL,
+        recipient_list=[email],
+        fail_silently=False,
+    )
+
+    return True, "Te hemos enviado un nuevo código de verificación."

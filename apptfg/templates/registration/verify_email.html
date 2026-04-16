@@ -27,11 +27,47 @@
       {% endfor %}
     {% endif %}
 
+    <p>
+      Introduce el correo con el que te registraste y el código de 6 dígitos que te enviamos por email.
+    </p>
+
     <form method="post" style="padding:1em;">
       {% csrf_token %}
       {{ form.as_p }}
       <button type="submit">Verificar</button>
     </form>
+
+    <hr style="margin: 1.5em 0;">
+
+    <h2 style="font-size: 1.2em;">¿No encuentras el código?</h2>
+    <p>
+      Si ya te registraste pero no tienes el correo o el código ha caducado, puedes pedir uno nuevo.
+    </p>
+
+    <form method="post" action="/accounts/resend-verification-code/" style="padding:1em;">
+      {% csrf_token %}
+      <p>
+        <label for="resend-email">Correo electrónico</label><br>
+        <input
+          type="email"
+          id="resend-email"
+          name="email"
+          value="{{ form.email.value|default:'' }}"
+          required
+        >
+      </p>
+      <button type="submit">Reenviar código</button>
+    </form>
+
+    <p style="margin-top: 1em;">
+      ¿Aún no te has registrado?
+      <a href="/accounts/register/">Crear cuenta</a>
+    </p>
+
+    <p style="margin-top: 0.75em;">
+      ¿Ya verificaste tu correo?
+      <a href="/accounts/login/">Ir al login</a>
+    </p>
   </div>
 </div>
 

@@ -4,7 +4,7 @@ from django.contrib import messages
 from .services import prediction_services
 from .services import auth_services
 from .forms import RegisterForm, VerifyCodeForm
-
+from django.views.decorators.http import require_http_methods
 
 def principal(request):
     # frontend/pagina_principal.html
@@ -91,3 +91,25 @@ def verify_email_view(request):
         form = VerifyCodeForm(initial={"email": initial_email})
 
     return render(request, "registration/verify_email.html", {"form": form})
+
+
+@require_http_methods(["POST"])
+def resend_verification_code_view(request):
+    if request.user.is_authenticated:
+        messages.info(request, "Ya has iniciado sesión.")
+        return redirect("/")
+
+    email = (request.POST.get("email") or "").strip().lower()
+
+    if not email:
+        messages.error(request, "Debes indicar un correo electrónico.")
+        return redirect("/accounts/verify-email/")
+
+    ok, message = auth_services.resend_verification_code(email)
+
+    if ok:
+        messages.success(request, message)
+    else:
+        messages.error(request, message)
+
+    return redirect(f"/accounts/verify-email/?email={email}")
