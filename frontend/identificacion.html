@@ -49,82 +49,84 @@
         <div class="grid_container" id="grid_container_min">
             <div id="card">
                 <form id="form-identificacion">
-                    <div class="grid_container">
+                  <div class="grid_container form-grid">
+                      <div
+                        class="label"
+                        id="modelSelectorWrapper"
+                        style="grid-column: 1 / span 2; display: none;"
+                      >
+                          Modelo:
+                          <select id="modelSelect" name="model_id" class="square">
+                              <option value="">Modelo activo</option>
+                          </select>
 
-                        <div
-                          class="label"
-                          id="modelSelectorWrapper"
-                          style="grid-column: 1 / span 2; display: none;"
-                        >
-                            Modelo:
-                            <select id="modelSelect" name="model_id" class="square">
-                                <option value="">Modelo activo</option>
-                            </select>
+                          <p id="modelHelpText" style="font-size: 14px; margin-top: 6px;"></p>
+                      </div>
 
-                            <p id="modelHelpText" style="font-size: 14px; margin-top: 6px;"></p>
-                        </div>
+                      <div class="label">
+                          Longitud del Coxal:
+                          <input class="square" type="number" name="coxalL" min="0" step="0.1" placeholder="0 cm">
+                      </div>
 
-                        <div class="label">
-                            Longitud del Coxal:
-                            <input class="square" type="number" name="coxalL" min="0" step="0.1" placeholder="0 cm">
-                        </div>
+                      <div class="label">
+                          Anchura del Coxal:
+                          <input class="square" type="number" name="coxalA" min="0" step="0.1" placeholder="0 cm">
+                      </div>
 
-                        <div class="label">
-                            Anchura del Coxal:
-                            <input class="square" type="number" name="coxalA" min="0" step="0.1" placeholder="0 cm">
-                        </div>
+                      <div class="label">
+                          Esternón:
+                          <input class="square" type="number" name="esternon" min="0" step="0.1" placeholder="0 cm">
+                      </div>
 
-                        <div class="label">
-                            Esternón:
-                            <input class="square" type="number" name="esternon" min="0" step="0.1" placeholder="0 cm">
-                        </div>
+                      <div class="label">
+                          Fémur:
+                          <input class="square" type="number" name="femur" min="0" step="0.1" placeholder="0 cm">
+                      </div>
 
-                        <div class="label">
-                            Fémur:
-                            <input class="square" type="number" name="femur" min="0" step="0.1" placeholder="0 cm">
-                        </div>
+                      <div class="label">
+                          Tibiotarso:
+                          <input class="square" type="number" name="tibiotarso" min="0" step="0.1" placeholder="0 cm">
+                      </div>
 
-                        <div class="label">
-                            Tibiotarso:
-                            <input class="square" type="number" name="tibiotarso" min="0" step="0.1" placeholder="0 cm">
-                        </div>
+                      <div class="label">
+                          Tarsometatarso:
+                          <input class="square" type="number" name="tarsometatarso" min="0" step="0.1" placeholder="0 cm">
+                      </div>
 
-                        <div class="label">
-                            Tarsometatarso:
-                            <input class="square" type="number" name="tarsometatarso" min="0" step="0.1" placeholder="0 cm">
-                        </div>
+                      <div class="label">
+                          Anchura del Cráneo:
+                          <input class="square" type="number" name="craneoA" min="0" step="0.1" placeholder="0 cm">
+                      </div>
 
-                        <div class="label">
-                            Anchura del Cráneo:
-                            <input class="square" type="number" name="craneoA" min="0" step="0.1" placeholder="0 cm">
-                        </div>
+                      <div class="label">
+                          Longitud del Cráneo:
+                          <input class="square" type="number" name="craneoL" min="0" step="0.1" placeholder="0 cm">
+                      </div>
 
-                        <div class="label">
-                            Longitud del Cráneo:
-                            <input class="square" type="number" name="craneoL" min="0" step="0.1" placeholder="0 cm">
-                        </div>
+                      <div class="label">
+                          Húmero:
+                          <input class="square" type="number" name="humero" min="0" step="0.1" placeholder="0 cm">
+                      </div>
 
-                        <div class="label">
-                            Húmero:
-                            <input class="square" type="number" name="humero" min="0" step="0.1" placeholder="0 cm">
-                        </div>
+                      <div class="label">
+                          Cúbito:
+                          <input class="square" type="number" name="cubito" min="0" step="0.1" placeholder="0 cm">
+                      </div>
 
-                        <div class="label">
-                            Cúbito:
-                            <input class="square" type="number" name="cubito" min="0" step="0.1" placeholder="0 cm">
-                        </div>
+                      <div class="label">
+                          Radio:
+                          <input class="square" type="number" name="radio" min="0" step="0.1" placeholder="0 cm">
+                      </div>
 
-                        <div class="label">
-                            Radio:
-                            <input class="square" type="number" name="radio" min="0" step="0.1" placeholder="0 cm">
-                        </div>
-                    </div>
+                      <div class="button-slot button-slot-right">
+                          <button class="button button-secondary" type="button" id="btn-limpiar">Limpiar</button>
+                      </div>
 
-                    <div id="lista_botones">
-                        <input class="button" type="submit" value="Calcular">
-                        <button class="button" type="button" id="btn-limpiar">Limpiar</button>
-                    </div>
-                </form>
+                      <div class="button-slot button-slot-left">
+                          <input class="button" type="submit" value="Calcular">
+                      </div>
+                  </div>
+              </form>
             </div>
 
             <div class="result" id="result_min">
