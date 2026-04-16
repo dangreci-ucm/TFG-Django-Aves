@@ -161,7 +161,7 @@
     }
 
     function getSearchableText(log) {
-      const username = (log.username || "").toLowerCase();
+      const username = (log.user  || "").toLowerCase();
       const modelName = (log.model_name || "").toLowerCase();
 
       const inputText = Object.entries(log.input_data || {})
@@ -269,7 +269,7 @@
             </div>
 
             <p><strong>Fecha:</strong> ${date}</p>
-            <p><strong>Usuario:</strong> ${log.username}</p>
+            <p><strong>Usuario:</strong> ${log.user}</p>
             <p><strong>Modelo:</strong> ${log.model_name}</p>
 
             <p><strong>Datos de entrada:</strong></p>
