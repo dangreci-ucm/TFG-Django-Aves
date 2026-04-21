@@ -23,6 +23,7 @@ urlpatterns = [
     path("api/dataset/upload", api_views.dataset_upload, name="dataset_upload"),
     path("api/models", api_views.model_list, name="model_list"),
     path("api/predictions/<int:prediction_id>/delete", api_views.borrar_prediccion, name="prediction_delete"),
+    path("api/dataset/stats", api_views.dataset_stats, name="dataset_stats"),
 
     path("api/models/<int:model_id>/activate", api_views.set_active_model, name="set_active_model"), #REVISAR
 

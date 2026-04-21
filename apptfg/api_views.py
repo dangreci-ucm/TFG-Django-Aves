@@ -13,6 +13,8 @@ from .models import Aves, DatasetArtifact, ModelArtifact, PredictionLog
 from .prediccion import Prediction
 from .services import prediction_services
 
+from django.db.models import Min, Max
+
 
 def ping(request):
     return JsonResponse({"ok": True})
@@ -52,6 +54,63 @@ def me(request):
     })
 
 
+def validate_prediction_input_ranges(input_data):
+    """
+    Valida que los valores enviados estén dentro del rango min/max
+    del dataset almacenado en Aves.
+    """
+    stats = Aves.objects.aggregate(
+        coxalL_min=Min("coxalL"), coxalL_max=Max("coxalL"),
+        coxalA_min=Min("coxalA"), coxalA_max=Max("coxalA"),
+        esternon_min=Min("esternon"), esternon_max=Max("esternon"),
+        femur_min=Min("femur"), femur_max=Max("femur"),
+        tibiotarso_min=Min("tibiotarso"), tibiotarso_max=Max("tibiotarso"),
+        tarsometatarso_min=Min("tarsometatarso"), tarsometatarso_max=Max("tarsometatarso"),
+        craneoA_min=Min("craneoancho"), craneoA_max=Max("craneoancho"),
+        craneoL_min=Min("craneolongitud"), craneoL_max=Max("craneolongitud"),
+        humero_min=Min("humero"), humero_max=Max("humero"),
+        cubito_min=Min("cubito"), cubito_max=Max("cubito"),
+        radio_min=Min("radio"), radio_max=Max("radio"),
+    )
+
+    field_labels = {
+        "coxalL": "Longitud del Coxal",
+        "coxalA": "Anchura del Coxal",
+        "esternon": "Esternón",
+        "femur": "Fémur",
+        "tibiotarso": "Tibiotarso",
+        "tarsometatarso": "Tarsometatarso",
+        "craneoA": "Anchura del Cráneo",
+        "craneoL": "Longitud del Cráneo",
+        "humero": "Húmero",
+        "cubito": "Cúbito",
+        "radio": "Radio",
+    }
+
+    for field, value in input_data.items():
+        if value is None:
+            continue
+
+        min_val = stats.get(f"{field}_min")
+        max_val = stats.get(f"{field}_max")
+
+        if min_val is None or max_val is None:
+            continue
+
+        if value < min_val:
+            return False, (
+                f"El valor de '{field_labels.get(field, field)}' es menor que el mínimo permitido "
+                f"({min_val})."
+            )
+
+        if value > max_val:
+            return False, (
+                f"El valor de '{field_labels.get(field, field)}' es mayor que el máximo permitido "
+                f"({max_val})."
+            )
+
+    return True, None
+
 @require_http_methods(["POST"])
 def calcular(request):
     """
@@ -82,6 +141,12 @@ def calcular(request):
 
     try:
         huesos = prediction_services.build_huesos_from_post(post_like)
+
+        # Validar rangos con el dataset actual
+        ok_ranges, range_error = validate_prediction_input_ranges(huesos)
+        if not ok_ranges:
+            return JsonResponse({"ok": False, "error": range_error}, status=400)
+
         result_sort = prediction_services.calcular_prediccion(huesos, model_id=model_id)
 
     except ValueError as e:
@@ -100,6 +165,11 @@ def calcular(request):
                 model_name = selected_model.name
         else:
             model_name = prediction_services.get_active_model_name()
+
+        # Quitar extensión .joblib si la hubiera
+        if model_name:
+            model_name = model_name.rsplit(".", 1)[0]
+
     except Exception:
         pass
 
@@ -111,7 +181,7 @@ def calcular(request):
             model_name=model_name,
         )
     except Exception:
-        # No rompemos la predicción si falla el log
+        # No se rompe la predicción si falla el log
         pass
 
     return JsonResponse({"ok": True, "results": result_sort})
@@ -667,4 +737,31 @@ def user_delete(request, user_id):
     return JsonResponse({
         "ok": True,
         "message": "Usuario eliminado correctamente."
+    })
+
+
+@login_required
+@require_http_methods(["GET"])
+def dataset_stats(request):
+    """
+    Devuelve mínimos y máximos del dataset activo para cada hueso,
+    calculados directamente desde la tabla Aves.
+    """
+    stats = Aves.objects.aggregate(
+        coxalL_min=Min("coxalL"), coxalL_max=Max("coxalL"),
+        coxalA_min=Min("coxalA"), coxalA_max=Max("coxalA"),
+        esternon_min=Min("esternon"), esternon_max=Max("esternon"),
+        femur_min=Min("femur"), femur_max=Max("femur"),
+        tibiotarso_min=Min("tibiotarso"), tibiotarso_max=Max("tibiotarso"),
+        tarsometatarso_min=Min("tarsometatarso"), tarsometatarso_max=Max("tarsometatarso"),
+        craneoA_min=Min("craneoancho"), craneoA_max=Max("craneoancho"),
+        craneoL_min=Min("craneolongitud"), craneoL_max=Max("craneolongitud"),
+        humero_min=Min("humero"), humero_max=Max("humero"),
+        cubito_min=Min("cubito"), cubito_max=Max("cubito"),
+        radio_min=Min("radio"), radio_max=Max("radio"),
+    )
+
+    return JsonResponse({
+        "ok": True,
+        "stats": stats,
     })

@@ -291,3 +291,18 @@ ol{
         max-height: none;
     }
 }
+
+.range-help{
+    display: block;
+    margin-top: -2px;
+    margin-bottom: 6px;
+    font-size: 11.5px;
+    line-height: 1.3;
+    color: #5b6b64;
+}
+
+.input-out-of-range{
+    border-color: #c94b49 !important;
+    background-color: #fff4f4 !important;
+    box-shadow: 0 0 0 3px rgba(201, 75, 73, 0.14) !important;
+}
