@@ -740,7 +740,6 @@ def user_delete(request, user_id):
     })
 
 
-@login_required
 @require_http_methods(["GET"])
 def dataset_stats(request):
     """
