@@ -19,12 +19,12 @@
     --text-soft: #52615a;
     --border-soft: #d6e1db;
 
-    --shadow-soft: 0 8px 24px rgba(36, 49, 44, 0.08);
-    --shadow-hover: 0 12px 28px rgba(36, 49, 44, 0.12);
+    --shadow-soft: 0 5px 16px rgba(36, 49, 44, 0.07);
+    --shadow-hover: 0 8px 20px rgba(36, 49, 44, 0.11);
 
-    --radius-sm: 10px;
-    --radius-md: 14px;
-    --radius-lg: 18px;
+    --radius-sm: 8px;
+    --radius-md: 12px;
+    --radius-lg: 15px;
 }
 
 html{
@@ -40,6 +40,8 @@ body {
     min-height: 100vh;
     display: flex;
     flex-direction: column;
+    font-size: 14px;
+    line-height: 1.45;
 }
 
 /**************************************************************/
@@ -52,16 +54,16 @@ header{
     margin: 0 auto;
     min-width: 100%;
     text-align: center;
-    box-shadow: 0 4px 16px rgba(0,0,0,0.08);
-    border-bottom-left-radius: 18px;
-    border-bottom-right-radius: 18px;
+    box-shadow: 0 3px 12px rgba(0,0,0,0.08);
+    border-bottom-left-radius: 14px;
+    border-bottom-right-radius: 14px;
 }
 
 header h1{
-    font-size: clamp(24px, 3vw, 34px);
+    font-size: clamp(20px, 2.2vw, 28px);
     font-weight: 700;
-    padding: 1.15em 1em;
-    line-height: 1.2;
+    padding: 0.8em 0.8em;
+    line-height: 1.15;
 }
 
 /**************************************************************/
@@ -84,24 +86,24 @@ header h1{
     overflow: hidden;
     background-color: #ffffff;
     border-bottom: 1px solid var(--border-soft);
-    box-shadow: 0 4px 12px rgba(36, 49, 44, 0.05);
+    box-shadow: 0 3px 10px rgba(36, 49, 44, 0.05);
     position: sticky;
     top: 0;
     z-index: 20;
-    padding: 4px 6px;
+    padding: 2px 4px;
 }
 
 .navbar a {
     float: left;
-    font-size: 15px;
+    font-size: 13px;
     color: var(--text-main);
     text-align: center;
-    padding: 12px 14px;
+    padding: 8px 10px;
     text-decoration: none;
     font-weight: 500;
     transition: background-color 0.2s ease, color 0.2s ease;
-    border-radius: 10px;
-    margin: 4px;
+    border-radius: 8px;
+    margin: 2px;
 }
 
 .menu {
@@ -110,16 +112,16 @@ header h1{
 }
 
 .menu .menubtn {
-    font-size: 15px;
+    font-size: 13px;
     border: none;
     outline: none;
     color: var(--text-main);
-    padding: 12px 14px;
+    padding: 8px 10px;
     background-color: inherit;
     font-family: inherit;
-    margin: 4px;
+    margin: 2px;
     font-weight: 500;
-    border-radius: 10px;
+    border-radius: 8px;
     cursor: pointer;
 }
 
@@ -133,10 +135,10 @@ header h1{
     display: none;
     position: absolute;
     background-color: #ffffff;
-    min-width: 220px;
+    min-width: 200px;
     border: 1px solid var(--border-soft);
-    border-radius: 12px;
-    box-shadow: 0 12px 24px rgba(36,49,44,0.12);
+    border-radius: 10px;
+    box-shadow: 0 10px 20px rgba(36,49,44,0.12);
     z-index: 30;
     overflow: hidden;
 }
@@ -144,7 +146,7 @@ header h1{
 .menu-content a {
     float: none;
     color: var(--text-main);
-    padding: 12px 16px;
+    padding: 10px 14px;
     text-decoration: none;
     display: block;
     text-align: left;
@@ -173,12 +175,12 @@ nav hr{
 .text{
     overflow: auto;
     font-family: 'Roboto', Arial, sans-serif;
-    padding: 1.5em 1em 2.5em 1em;
+    padding: 0.85em 0.7em 1.4em 0.7em;
 }
 
 .description{
-    margin-top: 1.4em;
-    padding: 2em;
+    margin-top: 0.75em;
+    padding: 1.2em 1.35em;
     text-align: left;
     background: var(--bg-card);
     border: 1px solid var(--border-soft);
@@ -188,42 +190,42 @@ nav hr{
 
 .description h1{
     word-wrap: break-word;
-    font-size: 28px;
+    font-size: 21px;
     font-weight: 700;
-    margin-bottom: 0.8em;
+    margin-bottom: 0.6em;
     color: var(--primary-dark);
-    line-height: 1.2;
+    line-height: 1.15;
 }
 
 .description h2,
 h2{
     color: var(--primary);
-    margin-top: 0.8em;
-    margin-bottom: 0.6em;
-    font-size: 24px;
+    margin-top: 0.65em;
+    margin-bottom: 0.45em;
+    font-size: 20px;
     font-weight: 700;
 }
 
 p{
     word-wrap: break-word;
     color: var(--text-main);
-    font-size: 16px;
-    line-height: 1.65;
-    margin: 0 0 0.9em 0;
-    padding: 1em 1.1em;
+    font-size: 14px;
+    line-height: 1.5;
+    margin: 0 0 0.65em 0;
+    padding: 0.72em 0.85em;
     text-align: left;
     background-color: var(--bg-soft);
-    border-radius: 12px;
+    border-radius: 10px;
 }
 
 ul, ol{
-    margin: 0.8em 0 1em 1.5em;
+    margin: 0.6em 0 0.8em 1.3em;
     color: var(--text-main);
-    line-height: 1.6;
+    line-height: 1.45;
 }
 
 li{
-    margin-bottom: 0.4em;
+    margin-bottom: 0.3em;
 }
 
 a{
@@ -247,14 +249,14 @@ select,
 textarea{
     width: 100%;
     max-width: 520px;
-    padding: 0.75em 0.9em;
+    padding: 0.6em 0.75em;
     border: 1px solid var(--border-soft);
     border-radius: var(--radius-sm);
     background: #fff;
     color: var(--text-main);
-    font-size: 15px;
-    margin-top: 0.45em;
-    margin-bottom: 0.35em;
+    font-size: 14px;
+    margin-top: 0.3em;
+    margin-bottom: 0.25em;
     outline: none;
     transition: border-color 0.2s ease, box-shadow 0.2s ease;
 }
@@ -263,20 +265,20 @@ input:focus,
 select:focus,
 textarea:focus{
     border-color: var(--secondary);
-    box-shadow: 0 0 0 4px rgba(111, 155, 141, 0.18);
+    box-shadow: 0 0 0 3px rgba(111, 155, 141, 0.16);
 }
 
 button{
     background-color: var(--primary);
     border: none;
     color: #fff;
-    padding: 0.82em 1.2em;
-    border-radius: 10px;
-    font-size: 15px;
+    padding: 0.62em 0.95em;
+    border-radius: 9px;
+    font-size: 13px;
     font-weight: 600;
     cursor: pointer;
     transition: background-color 0.2s ease, transform 0.15s ease;
-    box-shadow: 0 6px 14px rgba(47, 93, 80, 0.18);
+    box-shadow: 0 5px 12px rgba(47, 93, 80, 0.15);
 }
 
 button:hover{
@@ -296,11 +298,11 @@ button:disabled{
 /**************************************************************/
 
 .history-card{
-    margin-bottom: 1.5em;
-    padding: 1.2em;
+    margin-bottom: 1em;
+    padding: 1em;
     background: #ffffff;
     border: 1px solid var(--border-soft);
-    border-radius: 16px;
+    border-radius: 14px;
     box-shadow: var(--shadow-soft);
 }
 
@@ -308,12 +310,12 @@ button:disabled{
     display: flex;
     justify-content: space-between;
     align-items: center;
-    gap: 1em;
-    margin-bottom: 1em;
+    gap: 0.8em;
+    margin-bottom: 0.75em;
 }
 
 .history-card-title{
-    font-size: 22px;
+    font-size: 18px;
     font-weight: 700;
     color: var(--primary-dark);
     margin: 0;
@@ -322,61 +324,61 @@ button:disabled{
 .history-meta{
     display: grid;
     grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 12px;
-    margin-bottom: 1em;
+    gap: 8px;
+    margin-bottom: 0.8em;
 }
 
 .history-meta-item{
     background: var(--bg-soft);
-    border-radius: 12px;
-    padding: 0.9em 1em;
+    border-radius: 10px;
+    padding: 0.7em 0.8em;
     color: var(--text-main);
 }
 
 .history-sections{
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 14px;
+    gap: 10px;
     align-items: start;
 }
 
 .history-section{
     background: var(--bg-soft-2);
     border: 1px solid var(--border-soft);
-    border-radius: 14px;
-    padding: 1em;
+    border-radius: 12px;
+    padding: 0.8em;
 }
 
 .history-section h3{
-    margin: 0 0 0.7em 0;
+    margin: 0 0 0.5em 0;
     color: var(--primary);
-    font-size: 18px;
+    font-size: 16px;
 }
 
 .history-section ul,
 .history-section ol{
-    margin: 0 0 0 1.2em;
+    margin: 0 0 0 1.1em;
 }
 
 .history-section li{
-    margin-bottom: 0.45em;
+    margin-bottom: 0.35em;
 }
 
 .delete-prediction-btn{
     border: 1px solid #c7d3cd !important;
     border-radius: 50% !important;
-    width: 36px !important;
-    height: 36px !important;
+    width: 32px !important;
+    height: 32px !important;
     background: #ffffff !important;
     color: var(--primary) !important;
     font-weight: 700 !important;
-    font-size: 18px !important;
+    font-size: 17px !important;
     line-height: 1 !important;
     display: inline-flex !important;
     align-items: center !important;
     justify-content: center !important;
     padding: 0 !important;
-    box-shadow: 0 4px 10px rgba(36, 49, 44, 0.10);
+    box-shadow: 0 3px 8px rgba(36, 49, 44, 0.10);
     flex-shrink: 0;
 }
 
@@ -402,18 +404,18 @@ button:disabled{
 
 .bird{
     position: relative;
-    width: 210px;
-    height: 130px;
+    width: 170px;
+    height: 105px;
     background: #edf3ef;
-    margin: 20px;
-    border-radius: 16px;
+    margin: 14px;
+    border-radius: 13px;
     overflow: hidden;
-    box-shadow: 0 8px 20px rgba(36,49,44,0.08);
+    box-shadow: 0 6px 16px rgba(36,49,44,0.07);
     transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
 .bird:hover{
-    transform: translateY(-4px);
+    transform: translateY(-3px);
     box-shadow: var(--shadow-hover);
 }
 
@@ -421,13 +423,13 @@ button:disabled{
     display: block;
     margin-left: auto;
     margin-right: auto;
-    border-radius: 14px;
+    border-radius: 11px;
     border: 2px solid var(--secondary);
     width: 100%;
-    max-width: 180px;
-    height: 110px;
+    max-width: 145px;
+    height: 88px;
     object-fit: cover;
-    margin-top: 10px;
+    margin-top: 8px;
 }
 
 .overlay {
@@ -438,9 +440,9 @@ button:disabled{
     transition: .3s ease;
     opacity: 0;
     color: white;
-    font-size: 18px;
+    font-size: 14px;
     text-align: center;
-    padding: 0.6em;
+    padding: 0.45em;
 }
 
 .bird:hover .overlay{
@@ -453,28 +455,28 @@ button:disabled{
 
 footer{
     width: 100%;
-    padding: 28px 0 36px 0;
+    padding: 18px 0 24px 0;
 }
 
 #pie_pagina{
-    max-width: 1200px;
+    max-width: 1100px;
     margin: auto;
     text-align: center;
-    padding: 0 40px;
+    padding: 0 26px;
 }
 
 #pie_pagina hr{
     border: none;
     height: 1px;
     background-color: var(--border-soft);
-    margin-bottom: 18px;
+    margin-bottom: 12px;
 }
 
 footer #imgucm{
     margin-left: auto;
     margin-right: auto;
     display: inline-block;
-    padding: 1%;
+    padding: 0.5%;
 }
 
 footer #name{
@@ -491,26 +493,78 @@ footer #creativecommons{
     padding: 1%;
 }
 
-@media (max-width: 768px){
+/**************************************************************/
+/*-------------- RESPONSIVE COMPACTO ------------------------ */
+/**************************************************************/
+
+@media (max-width: 1200px){
+    header h1{
+        font-size: 23px;
+        padding: 0.7em 0.6em;
+    }
+
+    .navbar a,
+    .menu .menubtn{
+        font-size: 12.5px;
+        padding: 7px 9px;
+        margin: 2px;
+    }
+
     .text{
-        padding: 1em 0.75em 2em 0.75em;
+        padding: 0.7em 0.55em 1.1em 0.55em;
     }
 
     .description{
-        padding: 1.25em;
-        border-radius: 14px;
+        padding: 1em;
+        margin-top: 0.55em;
     }
 
     .description h1{
-        font-size: 24px;
+        font-size: 19px;
     }
 
     p{
-        padding: 0.9em;
+        font-size: 13.5px;
+        padding: 0.65em 0.75em;
+    }
+
+    button{
+        font-size: 12.5px;
+        padding: 0.55em 0.85em;
+    }
+}
+
+@media (max-width: 768px){
+    .text{
+        padding: 0.75em 0.6em 1.4em 0.6em;
+    }
+
+    .description{
+        padding: 0.95em;
+        border-radius: 13px;
+    }
+
+    .description h1{
+        font-size: 20px;
+    }
+
+    p{
+        padding: 0.75em;
     }
 
     header{
-        border-bottom-left-radius: 14px;
-        border-bottom-right-radius: 14px;
+        border-bottom-left-radius: 12px;
+        border-bottom-right-radius: 12px;
+    }
+
+    .bird{
+        width: 155px;
+        height: 100px;
+        margin: 10px;
+    }
+
+    .bird img{
+        max-width: 132px;
+        height: 82px;
     }
 }

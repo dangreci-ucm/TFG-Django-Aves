@@ -163,21 +163,21 @@
   }
   //helper para mostrar/ocultar el botón historial
   function setHistoryVisible(visible) {
-  const ids = ['nav-history-link', 'nav-history-inline'];
-  ids.forEach((id) => {
-    const el = document.getElementById(id);
-    if (!el) return;
-    el.style.display = visible ? '' : 'none';
-  });
+    const ids = ['nav-history-link', 'nav-history-inline'];
+    ids.forEach((id) => {
+      const el = document.getElementById(id);
+      if (!el) return;
+      el.style.display = visible ? '' : 'none';
+    });
   }
 
   function setUsersVisible(visible) {
-  const ids = ['nav-users-link', 'nav-users-inline'];
-  ids.forEach((id) => {
-    const el = document.getElementById(id);
-    if (!el) return;
-    el.style.display = visible ? '' : 'none';
-  });
+    const ids = ['nav-users-link', 'nav-users-inline'];
+    ids.forEach((id) => {
+      const el = document.getElementById(id);
+      if (!el) return;
+      el.style.display = visible ? '' : 'none';
+    });
   }
 
   function setLoginLinks() {
@@ -256,20 +256,20 @@
       if (a.dataset.action === 'logout') {
         e.preventDefault();
 
-        // 1) Pintar LOGIN inmediatamente (evita parpadeo)
+        //Pintar LOGIN inmediatamente (evita parpadeo)
         await updateAuthLinks(true);
 
-        // 2) Hacer logout real
+        //Hacer logout real
         try {
           await doLogout();
         } catch (err) {
           console.warn(err);
         }
 
-        // 3) Revalidar contra backend
+        //Revalidar contra backend
         await updateAuthLinks(false);
 
-        // 4) Redirigir a home (sin #)
+        //Redirigir a home (sin #)
         window.location.assign('/');
       }
     });
