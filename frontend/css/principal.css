@@ -46,24 +46,34 @@
 }
 
 .container_bird{
-  max-width: 1100px;
+  max-width: 900px;
   margin: 28px auto 10px auto;
   padding: 0 12px;
 
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  align-items: stretch;
-  gap: 24px;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  justify-items: center;
+  align-items: center;
+  gap: 28px;
 }
 
 .container_bird .bird{
   margin: 0;
 }
 
-@media (min-width: 900px){
+@media (max-width: 900px){
   .container_bird{
-    gap: 28px;
+    max-width: 680px;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 22px;
+  }
+}
+
+@media (max-width: 650px){
+  .container_bird{
+    max-width: 430px;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 16px;
   }
 }
 
@@ -74,7 +84,6 @@
 
   .container_bird{
     padding: 0 4px;
-    gap: 14px;
     margin-top: 20px;
   }
 
