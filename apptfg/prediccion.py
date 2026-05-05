@@ -1,63 +1,86 @@
 from dataclasses import dataclass
-from typing import Dict, Any, List, Tuple
+from typing import Dict, List, Tuple
 import io
 
 import joblib
-import pandas as pd
+import numpy as np
 
-from sklearn.model_selection import train_test_split
+from sklearn.model_selection import StratifiedKFold, GridSearchCV
 from sklearn.ensemble import RandomForestClassifier
-from sklearn.impute import SimpleImputer
+from sklearn.pipeline import Pipeline
 
-from imblearn.over_sampling import SMOTE
-from imblearn.pipeline import Pipeline
+from sklearn.preprocessing import LabelEncoder, StandardScaler
+
+from apptfg.services.dataset_services import get_aves_dataset
 
 
 @dataclass
 class ModelBundle:
     """
     Modelo serializable que guardaremos en PostgreSQL como binario.
-    - pipeline: imputación + random forest
-    - feature_names: columnas de entrada esperadas
-    - score: accuracy estimada para ponderar la probabilidad final
+    - model: modelo comprimido con joblib
     """
-    pipeline: Any
+    model: RandomForestClassifier
     feature_names: List[str]
+    species_names: List[str]
     score: float
 
 
 class Prediction:
     @staticmethod
-    def train(data: pd.DataFrame) -> ModelBundle:
+    def train() -> ModelBundle:
         """
         Entrena un modelo usando todas las columnas de huesos disponibles
         en el dataset y devuelve un ModelBundle en memoria.
         """
-        if "Especie" not in data.columns:
-            raise ValueError("El dataset no contiene la columna 'Especie'")
+        dataset = get_aves_dataset()
+        if dataset.empty:
+            raise ValueError("Error al obtener el dataset")
+        dataset.columns = dataset.columns.str.strip()
 
-        y = data["Especie"]
-        X = data.drop(columns=["Especie"])
+        # Identificar columnas de características (todas excepto Especie e IDENT)
+        feature_names = [col for col in dataset.columns
+                         if col not in ['Especie', 'IDENT']]
 
-        feature_names = list(X.columns)
+        X = dataset[feature_names].values
+        y = dataset['Especie'].values
 
-        X_train, X_test, y_train, y_test = train_test_split(
-            X, y, test_size=0.1, random_state=12, stratify=y
-        )
+        label_encoder = LabelEncoder()
+        y_encoded = label_encoder.fit_transform(y)
 
-        pipe = Pipeline(steps=[
-            ("imputer", SimpleImputer(strategy="mean")),
-            ("smote", SMOTE()),
-            ("rf", RandomForestClassifier(n_estimators=200, random_state=12)),
+        pipeline = Pipeline([
+            ('scaler', StandardScaler()),  # normalizamos las variables
+            ('classifier', RandomForestClassifier())  # modelo elegido
         ])
 
-        pipe.fit(X_train, y_train)
-        score = float(pipe.score(X_test, y_test))
+        parameters = {
+            'classifier__n_estimators': [50, 100, 200],
+            'classifier__max_depth': [None, 10, 20, 30],
+            'classifier__min_samples_split': [2, 5, 10],
+            'classifier__min_samples_leaf': [1, 2, 4]
+        }
+
+        # Configura la validación cruzada
+        cv = StratifiedKFold(n_splits=5, shuffle=True, random_state=42)
+
+        grid = GridSearchCV(
+            estimator=pipeline,
+            param_grid=parameters,
+            cv=cv,
+            scoring='balanced_accuracy',
+            return_train_score=True,
+            n_jobs=-1,  # usar todos los núcleos
+            verbose=1,  # muestra progreso (opcional)
+            refit=True  # Reentrenar el modelo con los mejores parametros encontrados
+        )
+
+        grid.fit(X, y_encoded)  # Entrenamos el modelo
 
         bundle = ModelBundle(
-            pipeline=pipe,
+            model=grid.best_estimator_,
             feature_names=feature_names,
-            score=score,
+            species_names=label_encoder.classes_,
+            score=grid.best_score_
         )
 
         return bundle
@@ -81,30 +104,40 @@ class Prediction:
 
     @staticmethod
     def predict_topk(
-        bundle: ModelBundle,
-        huesos: Dict[str, float],
-        top_k: int = 3
+            bundle: ModelBundle,
+            huesos: Dict[str, float],
+            top_k: int = 3
     ) -> List[Tuple[str, float]]:
         """
         Devuelve [(especie, prob_en_%), ...] ordenado desc.
-        Si faltan huesos, se imputan por la media.
         """
-        row = {name: None for name in bundle.feature_names}
-        for k, v in huesos.items():
-            if k in row:
-                row[k] = v
+        # Crear array con valores faltantes
+        X_input = np.full((1, len(bundle.feature_names)), np.nan)
 
-        X_new = pd.DataFrame([row], columns=bundle.feature_names)
+        # Llenar valores conocidos
+        known_features = []
+        for i, col in enumerate(bundle.feature_names):
+            if col in huesos.keys():
+                X_input[0, i] = huesos[col]
+                known_features.append(col)
 
-        proba = bundle.pipeline.predict_proba(X_new)[0]
-        classes = bundle.pipeline.named_steps["rf"].classes_
+        if len(known_features) == 0:
+            raise ValueError("Debes proporcionar al menos una medida")
 
-        weighted = [
-            (cls, float(bundle.score) * float(p))
-            for cls, p in zip(classes, proba)
-        ]
+        probas = bundle.model.predict_proba(X_input)[0]
 
-        weighted.sort(key=lambda x: x[1], reverse=True)
-        top = weighted[:top_k]
+        probabilidades = {
+            bundle.species_names[i]: float(probas[i])
+            for i in range(len(bundle.species_names))
+        }
+
+        # Ordenar alternativas por probabilidad
+        sorted_species = sorted(
+            probabilidades.items(),
+            key=lambda x: x[1],
+            reverse=True
+        )
+
+        top = sorted_species[:top_k]
 
         return [(cls, round(p * 100, 2)) for cls, p in top]

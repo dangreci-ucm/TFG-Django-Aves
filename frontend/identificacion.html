@@ -226,7 +226,7 @@
           `;
           return;
         }
-        msgTitle.textContent = "Calc  ulando...";
+        msgTitle.textContent = "Calculando...";
         resultsList.innerHTML = "";
 
         const formData = new FormData(form);
@@ -269,7 +269,7 @@
             const imgSrc = `/img/img_aves/${especie}.jpg`;
             return `
               <li>
-                <p><b>${especie}</b> con una probabilidad del <b>${prob} %</b></p>
+                <p><b>${especie}</b> con una probabilidad del <b>${prob}%</b></p>
                 <div class="bird">
                   <img alt="${especie}" src="${imgSrc}">
                   <div class="overlay">${especie}</div>

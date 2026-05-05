@@ -73,7 +73,6 @@ class EmailVerificationCode(models.Model):
     @staticmethod
     def default_expiry():
         return timezone.now() + timedelta(minutes=10)
-    
 
 
 class PasswordResetCode(models.Model):

@@ -7,7 +7,6 @@ from .forms import RegisterForm, VerifyCodeForm, ForgotPasswordForm, ResetPasswo
 from django.views.decorators.http import require_http_methods
 
 
-
 def principal(request):
     # frontend/pagina_principal.html
     return render(request, 'pagina_principal.html', {})
@@ -28,7 +27,6 @@ def contacto(request):
     return render(request, 'contacto.html', {})
 
 
-
 def calcular(request):
     # Este endpoint renderiza la misma pantalla de identificación, mostrando resultados
     if request.method == 'POST':
@@ -41,14 +39,14 @@ def calcular(request):
 
         return render(request, 'identificacion.html', {'msg': 'Resultados', 'valor': result_sort})
 
-    return render(request, 'identificacion.html', {})   
+    return render(request, 'identificacion.html', {})
 
 
 def register_view(request):
     if request.user.is_authenticated:
         messages.info(request, "Ya has iniciado sesión.")
         return redirect("/")
-      
+
     if request.method == "POST":
         form = RegisterForm(request.POST)
         if form.is_valid():
@@ -73,7 +71,7 @@ def verify_email_view(request):
     if request.user.is_authenticated:
         messages.info(request, "Ya has iniciado sesión.")
         return redirect("/")
-    
+
     initial_email = request.GET.get("email", "")
 
     if request.method == "POST":

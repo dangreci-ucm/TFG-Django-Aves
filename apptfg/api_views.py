@@ -9,11 +9,14 @@ from django.http import FileResponse, HttpResponse, JsonResponse
 from django.views.decorators.csrf import ensure_csrf_cookie
 from django.views.decorators.http import require_http_methods, require_POST
 
+from .bone_imputation import impute_dataframes
 from .models import Aves, DatasetArtifact, ModelArtifact, PredictionLog
 from .prediccion import Prediction
 from .services import prediction_services
 
 from django.db.models import Min, Max
+
+from apptfg.services.dataset_services import get_aves_dataset
 
 
 def ping(request):
@@ -42,7 +45,7 @@ def me(request):
         return JsonResponse({
             "authenticated": True,
             "username": request.user.get_username(),
-             "id": request.user.id,
+            "id": request.user.id,
             "is_staff": request.user.is_staff,
             "is_superuser": request.user.is_superuser,
         })
@@ -110,6 +113,7 @@ def validate_prediction_input_ranges(input_data):
             )
 
     return True, None
+
 
 @require_http_methods(["POST"])
 def calcular(request):
@@ -313,34 +317,14 @@ def dataset_download(request):
             status=400
         )
 
-    aves = Aves.objects.all().order_by("id")
-    if not aves.exists():
+    df = get_aves_dataset()
+    if df.empty:
         return JsonResponse(
             {"ok": False, "error": "No hay datos de dataset disponibles en la base de datos."},
             status=404
         )
 
-    rows = []
-    for ave in aves:
-        rows.append({
-            "IDENT": ave.ident,
-            "Especie": ave.especie,
-            "coxalL": ave.coxalL,
-            "coxalA": ave.coxalA,
-            "esternon": ave.esternon,
-            "femur": ave.femur,
-            "tibiotarso": ave.tibiotarso,
-            "tarsometatarso": ave.tarsometatarso,
-            "craneoancho": ave.craneoancho,
-            "craneolongitud": ave.craneolongitud,
-            "humero": ave.humero,
-            "cubito": ave.cubito,
-            "radio": ave.radio,
-        })
-
-    df = pd.DataFrame(rows)
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-
     if dataset_format == "csv":
         csv_buffer = io.StringIO()
         df.to_csv(csv_buffer, index=False)
@@ -350,7 +334,7 @@ def dataset_download(request):
 
     xlsx_buffer = io.BytesIO()
     with pd.ExcelWriter(xlsx_buffer, engine="openpyxl") as writer:
-        df.to_excel(writer, index=False, sheet_name="Base de datos") #REVISAR
+        df.to_excel(writer, index=False, sheet_name="Base de datos")  # REVISAR
 
     xlsx_buffer.seek(0)
 
@@ -371,7 +355,6 @@ def build_aves_instances_from_df(df: pd.DataFrame):
     for _, row in df.iterrows():
         aves_to_create.append(
             Aves(
-                ident=str(row["IDENT"]).strip(),
                 especie=str(row["Especie"]).strip(),
                 coxalL=row["coxalL"],
                 coxalA=row["coxalA"],
@@ -396,8 +379,8 @@ def dataset_upload(request):
     """
     Flujo:
     1. Validar Excel subido
-    2. Entrenar nuevo modelo en memoria
-    3. Reemplazar la tabla Aves con el dataset actual
+    2. Actualizar la tabla Aves con las nuevas entradas
+    3. Entrenar nuevo modelo en memoria
     4. Crear DatasetArtifact
     5. Crear ModelArtifact con model_blob
     6. Marcar ambos como activos
@@ -422,7 +405,6 @@ def dataset_upload(request):
         )
 
     required_columns = [
-        "IDENT",
         "Especie",
         "coxalL",
         "coxalA",
@@ -480,17 +462,22 @@ def dataset_upload(request):
             elif isinstance(value, str) and not value.strip():
                 missing_fields.append(col)
 
-        if missing_fields:
+        if 'Especie' in missing_fields:
             invalid_rows.append({
                 "row_excel": int(idx) + 2,
-                "missing_fields": missing_fields
+                "error": 'No contiene especie'
+            })
+        elif len(missing_fields) == len(required_columns)-1:
+            invalid_rows.append({
+                "row_excel": int(idx) + 2,
+                "error": 'No contiene valores'
             })
 
     if invalid_rows:
         return JsonResponse(
             {
                 "ok": False,
-                "error": "El Excel contiene filas incompletas. Todas las aves deben tener todos los huesos rellenos.",
+                "error": "El Excel contiene fallos: todas las aves deben tener Especie y al menos un hueso.",
                 "invalid_rows": invalid_rows[:20]
             },
             status=400
@@ -519,26 +506,26 @@ def dataset_upload(request):
                 status=400
             )
 
-    # DataFrame para entrenar: quitamos IDENT y dejamos Especie + huesos
+    # Imputamos mediante los huesos faltantes del dataframe usando recursion lineal
     try:
-        df_train = df.drop(columns=["IDENT"]).copy()
+        dataset = get_aves_dataset()
+        if dataset.empty:
+            return JsonResponse(
+                {"ok": False, "error": "No hay datos de dataset disponibles en la base de datos."},
+                status=404
+            )
+        imputed_df = impute_dataframes(df, dataset)
     except Exception as e:
         return JsonResponse(
             {"ok": False, "error": f"Error preparando los datos para entrenamiento: {str(e)}"},
             status=500
         )
+    # TODO: Mostrarle el dataframe entrenado al usuario a modo de preview
+    # TODO: Si confirma, añadir el dataframe a la base de datos
 
+    # Preparamos los datos del dataframe para guardarlos en la base de datos
     try:
-        bundle = Prediction.train(df_train)
-        model_bytes = Prediction.bundle_to_bytes(bundle)
-    except Exception as e:
-        return JsonResponse(
-            {"ok": False, "error": f"Error durante el entrenamiento del modelo: {str(e)}"},
-            status=500
-        )
-
-    try:
-        aves_to_create = build_aves_instances_from_df(df)
+        aves_to_create = build_aves_instances_from_df(imputed_df)
     except Exception as e:
         return JsonResponse(
             {
@@ -548,24 +535,42 @@ def dataset_upload(request):
             status=500
         )
 
-    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    model_name = f"model_{timestamp}.joblib"
-
+    # Inserto aves_to_create en la base de datos
     try:
         with transaction.atomic():
-            # Reemplazo completo del dataset actual
-            Aves.objects.all().delete()
             Aves.objects.bulk_create(aves_to_create, batch_size=500)
-
             DatasetArtifact.objects.update(is_active=False)
-            ModelArtifact.objects.update(is_active=False)
-
             dataset_artifact = DatasetArtifact.objects.create(
                 created_by=request.user if request.user.is_authenticated else None,
                 original_filename=f.name,
                 row_count=len(df),
                 is_active=True,
             )
+            prediction_services.clear_model_cache()
+
+    except Exception as e:
+        return JsonResponse(
+            {"ok": False, "error": f"Error insertando nuevas aves en la base de datos: {str(e)}"},
+            # TODO: esto es un fallo critico hay que ver que como puede fallar y pensar como manejarlo
+            status=500
+        )
+
+    # Una vez actualizada la base de datos, entrenamos un nuevo modelo
+    try:
+        bundle = Prediction.train()
+    except Exception as e:
+        return JsonResponse(
+            {"ok": False, "error": f"Error durante el entrenamiento del modelo: {str(e)}"},
+            status=500
+        )
+
+    # Guardamos el nuevo modelo en la base de datos
+    try:
+        with transaction.atomic():
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+            model_name = f"model_{timestamp}.joblib"
+            model_bytes = Prediction.bundle_to_bytes(bundle)
+            ModelArtifact.objects.update(is_active=False)
 
             model_artifact = ModelArtifact.objects.create(
                 created_by=request.user if request.user.is_authenticated else None,
@@ -580,7 +585,7 @@ def dataset_upload(request):
 
     except Exception as e:
         return JsonResponse(
-            {"ok": False, "error": f"Error guardando dataset/modelo en la base de datos: {str(e)}"},
+            {"ok": False, "error": f"Error guardando modelo en la base de datos: {str(e)}"},
             status=500
         )
 
@@ -593,8 +598,6 @@ def dataset_upload(request):
         "model_name": model_name,
         "score": round(bundle.score, 4),
     })
-
-
 
 
 @login_required

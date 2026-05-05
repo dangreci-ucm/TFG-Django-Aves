@@ -9,6 +9,7 @@ from django.db import transaction
 
 from apptfg.models import EmailVerificationCode, PasswordResetCode
 
+
 def generate_code():
     return f"{random.randint(0, 999999):06d}"
 
@@ -40,6 +41,7 @@ def register_user(username, email, password):
 
     return user
 
+
 def verify_email_code(email, code):
     user = User.objects.filter(email=email, is_active=False).first()
     if not user:
@@ -65,6 +67,7 @@ def verify_email_code(email, code):
     user.save()
 
     return True, "Cuenta verificada correctamente. Ya puedes iniciar sesión."
+
 
 def resend_verification_code(email):
     email = email.strip().lower()
