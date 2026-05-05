@@ -6,6 +6,7 @@ from sklearn.linear_model import Ridge
 from sklearn.model_selection import GridSearchCV
 from sklearn.preprocessing import StandardScaler
 
+
 def strongest_correlation(species_table: DataFrame, bones_to_impute: list):
     # obtenemos las correlaciones entre los huesos para la especie
     correlation_dict = species_table.corr().replace(1, np.nan).unstack().dropna()[bones_to_impute].to_dict()

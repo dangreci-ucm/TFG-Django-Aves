@@ -9,15 +9,14 @@ from django.http import FileResponse, HttpResponse, JsonResponse
 from django.views.decorators.csrf import ensure_csrf_cookie
 from django.views.decorators.http import require_http_methods, require_POST
 
-from .bone_imputation import impute_dataframe, impute_dataframes
+from .bone_imputation import impute_dataframes
 from .models import Aves, DatasetArtifact, ModelArtifact, PredictionLog
 from .prediccion import Prediction
 from .services import prediction_services
 
 from django.db.models import Min, Max
-from pandas import DataFrame
 
-from .temp import get_aves_dataset
+from apptfg.services.dataset_services import get_aves_dataset
 
 
 def ping(request):

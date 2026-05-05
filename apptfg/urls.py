@@ -3,9 +3,8 @@ from django.urls import path, include
 
 from apptfg import api_views, views
 
-
 urlpatterns = [
-    #path("admin/", admin.site.urls), (ya está la ruta en mysite/urls.py)
+    # path("admin/", admin.site.urls), (ya está la ruta en mysite/urls.py)
 
     path("accounts/", include("django.contrib.auth.urls")),
     path("accounts/register/", views.register_view, name="register"),
@@ -25,7 +24,7 @@ urlpatterns = [
     path("api/predictions/<int:prediction_id>/delete", api_views.borrar_prediccion, name="prediction_delete"),
     path("api/dataset/stats", api_views.dataset_stats, name="dataset_stats"),
 
-    path("api/models/<int:model_id>/activate", api_views.set_active_model, name="set_active_model"), #REVISAR
+    path("api/models/<int:model_id>/activate", api_views.set_active_model, name="set_active_model"),  # REVISAR
 
     path("api/users", api_views.user_list, name="user_list"),
     path("api/users/<int:user_id>/set-staff", api_views.user_set_staff, name="user_set_staff"),

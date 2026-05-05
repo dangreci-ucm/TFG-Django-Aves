@@ -3,7 +3,6 @@ from typing import Dict, Any, List, Tuple, Optional
 from apptfg.prediccion import Prediction, ModelBundle
 from apptfg.models import ModelArtifact
 
-
 # Caché en memoria para no deserializar el modelo en cada request
 _cached_bundle: Optional[ModelBundle] = None
 _cached_model_id: Optional[int] = None

@@ -11,7 +11,7 @@ from sklearn.pipeline import Pipeline
 
 from sklearn.preprocessing import LabelEncoder, StandardScaler
 
-from apptfg.temp import get_aves_dataset
+from apptfg.services.dataset_services import get_aves_dataset
 
 
 @dataclass
