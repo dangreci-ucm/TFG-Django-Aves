@@ -10,6 +10,7 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.pipeline import Pipeline
 
 from sklearn.preprocessing import LabelEncoder, StandardScaler
+from sklearn.impute import SimpleImputer
 
 from apptfg.services.dataset_services import get_aves_dataset
 
@@ -49,8 +50,9 @@ class Prediction:
         y_encoded = label_encoder.fit_transform(y)
 
         pipeline = Pipeline([
+            ('imputer', SimpleImputer(strategy='mean')),
             ('scaler', StandardScaler()),  # normalizamos las variables
-            ('classifier', RandomForestClassifier())  # modelo elegido
+            ('classifier', RandomForestClassifier(random_state=42))  # modelo elegido
         ])
 
         parameters = {
@@ -124,11 +126,33 @@ class Prediction:
         if len(known_features) == 0:
             raise ValueError("Debes proporcionar al menos una medida")
 
-        probas = bundle.model.predict_proba(X_input)[0]
+        # Compatibilidad con modelos serializados antes del merge:
+        # main guardaba el estimador en bundle.pipeline;
+        # models/render lo guarda en bundle.model.
+        estimator = getattr(bundle, 'model', None) or getattr(bundle, 'pipeline', None)
+        if estimator is None:
+            raise ValueError('El modelo cargado no contiene ni model ni pipeline')
+
+        probas = estimator.predict_proba(X_input)[0]
+
+        species_names = getattr(bundle, 'species_names', None)
+
+        if species_names is None:
+            if hasattr(estimator, 'named_steps'):
+                classifier = (
+                    estimator.named_steps.get('classifier')
+                    or estimator.named_steps.get('rf')
+                )
+                species_names = getattr(classifier, 'classes_', None)
+            else:
+                species_names = getattr(estimator, 'classes_', None)
+
+        if species_names is None:
+            raise ValueError('No se pudieron obtener las clases del modelo')
 
         probabilidades = {
-            bundle.species_names[i]: float(probas[i])
-            for i in range(len(bundle.species_names))
+            str(species_names[i]): float(probas[i])
+            for i in range(len(species_names))
         }
 
         # Ordenar alternativas por probabilidad
