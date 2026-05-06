@@ -56,14 +56,23 @@ class Prediction:
         ])
 
         parameters = {
-            'classifier__n_estimators': [50, 100, 200],
-            'classifier__max_depth': [None, 10, 20, 30],
-            'classifier__min_samples_split': [2, 5, 10],
-            'classifier__min_samples_leaf': [1, 2, 4]
+            # Render free es limitado: evitar una búsqueda enorme en cada upload.
+            'classifier__n_estimators': [100],
+            'classifier__max_depth': [None, 20],
+            'classifier__min_samples_split': [2, 5],
+            'classifier__min_samples_leaf': [1, 2]
         }
 
         # Configura la validación cruzada
-        cv = StratifiedKFold(n_splits=5, shuffle=True, random_state=42)
+        min_class_count = int(np.bincount(y_encoded).min())
+        if min_class_count < 2:
+            raise ValueError("Cada especie debe tener al menos 2 filas para entrenar el modelo")
+
+        cv = StratifiedKFold(
+            n_splits=min(5, min_class_count),
+            shuffle=True,
+            random_state=42
+        )
 
         grid = GridSearchCV(
             estimator=pipeline,
@@ -71,8 +80,8 @@ class Prediction:
             cv=cv,
             scoring='balanced_accuracy',
             return_train_score=True,
-            n_jobs=-1,  # usar todos los núcleos
-            verbose=1,  # muestra progreso (opcional)
+            n_jobs=1,  # Render free: evitar saturar CPU/memoria
+            verbose=0,  # evitar logs excesivos en Render
             refit=True  # Reentrenar el modelo con los mejores parametros encontrados
         )
 

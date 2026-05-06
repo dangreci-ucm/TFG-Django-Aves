@@ -355,6 +355,7 @@ def build_aves_instances_from_df(df: pd.DataFrame):
     for _, row in df.iterrows():
         aves_to_create.append(
             Aves(
+                ident=str(row["IDENT"]).strip(),
                 especie=str(row["Especie"]).strip(),
                 coxalL=row["coxalL"],
                 coxalA=row["coxalA"],
@@ -405,6 +406,7 @@ def dataset_upload(request):
         )
 
     required_columns = [
+        "IDENT",
         "Especie",
         "coxalL",
         "coxalA",
@@ -451,38 +453,6 @@ def dataset_upload(request):
 
     df = df[required_columns].copy()
 
-    invalid_rows = []
-    for idx, row in df.iterrows():
-        missing_fields = []
-
-        for col in required_columns:
-            value = row[col]
-            if pd.isna(value):
-                missing_fields.append(col)
-            elif isinstance(value, str) and not value.strip():
-                missing_fields.append(col)
-
-        if 'Especie' in missing_fields:
-            invalid_rows.append({
-                "row_excel": int(idx) + 2,
-                "error": 'No contiene especie'
-            })
-        elif len(missing_fields) == len(required_columns)-1:
-            invalid_rows.append({
-                "row_excel": int(idx) + 2,
-                "error": 'No contiene valores'
-            })
-
-    if invalid_rows:
-        return JsonResponse(
-            {
-                "ok": False,
-                "error": "El Excel contiene fallos: todas las aves deben tener Especie y al menos un hueso.",
-                "invalid_rows": invalid_rows[:20]
-            },
-            status=400
-        )
-
     numeric_columns = [
         "coxalL",
         "coxalA",
@@ -496,6 +466,43 @@ def dataset_upload(request):
         "cubito",
         "radio",
     ]
+
+    invalid_rows = []
+    for idx, row in df.iterrows():
+        missing_fields = []
+
+        for col in required_columns:
+            value = row[col]
+            if pd.isna(value):
+                missing_fields.append(col)
+            elif isinstance(value, str) and not value.strip():
+                missing_fields.append(col)
+
+        if 'IDENT' in missing_fields:
+            invalid_rows.append({
+                "row_excel": int(idx) + 2,
+                "error": 'No contiene IDENT'
+            })
+        elif 'Especie' in missing_fields:
+            invalid_rows.append({
+                "row_excel": int(idx) + 2,
+                "error": 'No contiene especie'
+            })
+        elif all(col in missing_fields for col in numeric_columns):
+            invalid_rows.append({
+                "row_excel": int(idx) + 2,
+                "error": 'No contiene valores de huesos'
+            })
+
+    if invalid_rows:
+        return JsonResponse(
+            {
+                "ok": False,
+                "error": "El Excel contiene fallos: todas las aves deben tener Especie y al menos un hueso.",
+                "invalid_rows": invalid_rows[:20]
+            },
+            status=400
+        )
 
     for col in numeric_columns:
         try:
@@ -514,7 +521,10 @@ def dataset_upload(request):
                 {"ok": False, "error": "No hay datos de dataset disponibles en la base de datos."},
                 status=404
             )
-        imputed_df = impute_dataframes(df, dataset)
+        idents = df["IDENT"].copy()
+        # La imputación trabaja solo con Especie + huesos; IDENT se restaura después.
+        imputed_df = impute_dataframes(df.drop(columns=["IDENT"]).copy(), dataset.copy())
+        imputed_df.insert(0, "IDENT", idents.values)
     except Exception as e:
         return JsonResponse(
             {"ok": False, "error": f"Error preparando los datos para entrenamiento: {str(e)}"},
@@ -538,6 +548,8 @@ def dataset_upload(request):
     # Inserto aves_to_create en la base de datos
     try:
         with transaction.atomic():
+            # El upload sustituye el dataset activo completo.
+            Aves.objects.all().delete()
             Aves.objects.bulk_create(aves_to_create, batch_size=500)
             DatasetArtifact.objects.update(is_active=False)
             dataset_artifact = DatasetArtifact.objects.create(

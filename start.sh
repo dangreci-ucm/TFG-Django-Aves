@@ -24,9 +24,9 @@ python manage.py collectstatic --noinput
 echo "Arrancando Gunicorn..."
 gunicorn mysite.wsgi:application \
     --bind 127.0.0.1:8000 \
-    --workers 3 \
-    --threads 2 \
-    --timeout 120 \
+    --workers 1 \
+    --threads 1 \
+    --timeout 300 \
     --log-level info &
 
 echo "Generando config de Nginx..."
