@@ -11,6 +11,58 @@
 
   <!-- Carga solo una vez -->
   <script defer src="/js/nav.js"></script>
+
+  <style>
+    .admin-box {
+      margin: 1em 0;
+      padding: 1em;
+      background-color: rgba(29,71,121,.04);
+      border-radius: 8px;
+    }
+
+    .models-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 0.75em;
+    }
+
+    .models-table th,
+    .models-table td {
+      padding: 0.6em;
+      border-bottom: 1px solid rgba(0,0,0,.12);
+      text-align: left;
+      vertical-align: middle;
+    }
+
+    .model-active-badge {
+      display: inline-block;
+      padding: 0.2em 0.5em;
+      border-radius: 999px;
+      background-color: rgba(46, 125, 50, .12);
+      color: #2e7d32;
+      font-size: 0.9em;
+      font-weight: bold;
+    }
+
+    .danger-button {
+      cursor: pointer;
+      border: none;
+      border-radius: 4px;
+      padding: 0.45em 0.75em;
+      background-color: #b3261e;
+      color: white;
+    }
+
+    .danger-button:disabled {
+      cursor: not-allowed;
+      background-color: #aaa;
+      color: #eee;
+    }
+
+    #modelsStatus {
+      margin-top: 0.5em;
+    }
+  </style>
 </head>
 
 <body>
@@ -38,12 +90,19 @@
         <input type="file" id="fileInput" accept=".xlsx,.xls" required />
         <button type="submit">Subir</button>
       </form>
-      
-      <div id="downloadBox" style="display:none; margin: 1em 0; padding: 1em; background-color: rgba(29,71,121,.04);">
-      <p>Puedes descargar el dataset actual, editarlo y volver a subirlo.</p>
-      <a href="/api/dataset/download" style="display:inline-block; margin-top:0.5em;">
-        Descargar dataset actual (Excel)
-      </a>
+
+      <div id="downloadBox" class="admin-box" style="display:none;">
+        <p>Puedes descargar el dataset actual, editarlo y volver a subirlo.</p>
+        <a href="/api/dataset/download" style="display:inline-block; margin-top:0.5em;">
+          Descargar dataset actual (Excel)
+        </a>
+      </div>
+
+      <div id="modelsBox" class="admin-box" style="display:none;">
+        <h2>Modelos guardados</h2>
+        <p>Desde aquí puedes consultar y eliminar modelos antiguos. No se permite eliminar el único modelo disponible.</p>
+        <div id="modelsStatus"></div>
+        <div id="modelsList"></div>
       </div>
 
       <p id="status"></p>
@@ -58,7 +117,149 @@
         .find((row) => row.startsWith("csrftoken="));
       return cookie ? cookie.split("=")[1] : null;
     }
-    
+
+    function formatDate(value) {
+      if (!value) return "-";
+
+      const date = new Date(value);
+      if (Number.isNaN(date.getTime())) return value;
+
+      return date.toLocaleString("es-ES", {
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+        hour: "2-digit",
+        minute: "2-digit"
+      });
+    }
+
+    function formatScore(value) {
+      if (value === null || value === undefined || value === "") return "-";
+      const number = Number(value);
+      if (Number.isNaN(number)) return value;
+      return number.toFixed(4);
+    }
+
+    async function loadModels() {
+      const modelsStatus = document.getElementById("modelsStatus");
+      const modelsList = document.getElementById("modelsList");
+
+      modelsStatus.textContent = "Cargando modelos…";
+      modelsList.innerHTML = "";
+
+      try {
+        const res = await fetch("/api/models", {
+          credentials: "include",
+          cache: "no-store"
+        });
+
+        const data = await res.json().catch(() => ({}));
+
+        if (!res.ok || !data.ok) {
+          modelsStatus.textContent = data.error || "No se pudieron cargar los modelos.";
+          return;
+        }
+
+        const models = data.models || [];
+
+        if (models.length === 0) {
+          modelsStatus.textContent = "No hay modelos guardados.";
+          return;
+        }
+
+        modelsStatus.textContent = "";
+
+        const canDeleteAny = models.length > 1;
+        const rows = models.map((model) => {
+          const activeLabel = model.is_active
+            ? '<span class="model-active-badge">Activo</span>'
+            : "";
+
+          const disabled = canDeleteAny ? "" : "disabled";
+          const title = canDeleteAny
+            ? "Eliminar modelo"
+            : "No se puede eliminar el único modelo disponible";
+
+          return `
+            <tr>
+              <td>${model.name || "-"}</td>
+              <td>${activeLabel}</td>
+              <td>${formatScore(model.score)}</td>
+              <td>${formatDate(model.created_at)}</td>
+              <td>
+                <button
+                  type="button"
+                  class="danger-button"
+                  data-model-id="${model.id}"
+                  data-model-name="${model.name || "modelo"}"
+                  title="${title}"
+                  ${disabled}
+                >
+                  Eliminar
+                </button>
+              </td>
+            </tr>
+          `;
+        }).join("");
+
+        modelsList.innerHTML = `
+          <table class="models-table">
+            <thead>
+              <tr>
+                <th>Modelo</th>
+                <th>Estado</th>
+                <th>Score</th>
+                <th>Creado</th>
+                <th>Acciones</th>
+              </tr>
+            </thead>
+            <tbody>${rows}</tbody>
+          </table>
+        `;
+
+        document.querySelectorAll(".danger-button[data-model-id]").forEach((button) => {
+          button.addEventListener("click", () => deleteModel(button.dataset.modelId, button.dataset.modelName));
+        });
+      } catch (err) {
+        modelsStatus.textContent = "Error de conexión cargando modelos.";
+      }
+    }
+
+    async function deleteModel(modelId, modelName) {
+      const modelsStatus = document.getElementById("modelsStatus");
+
+      const confirmed = window.confirm(`¿Seguro que quieres eliminar el modelo ${modelName}?`);
+      if (!confirmed) return;
+
+      const csrftoken = await getCSRFToken();
+      if (!csrftoken) {
+        modelsStatus.textContent = "No se encontró CSRF token. Inicia sesión y recarga.";
+        return;
+      }
+
+      modelsStatus.textContent = "Eliminando modelo…";
+
+      try {
+        const res = await fetch(`/api/models/${modelId}/delete`, {
+          method: "DELETE",
+          credentials: "include",
+          headers: { "X-CSRFToken": csrftoken }
+        });
+
+        const data = await res.json().catch(() => ({}));
+
+        if (!res.ok || !data.ok) {
+          modelsStatus.textContent = data.error || "No se pudo eliminar el modelo.";
+          return;
+        }
+
+        modelsStatus.textContent = data.message || "Modelo eliminado correctamente.";
+        await loadModels();
+      } catch (err) {
+        modelsStatus.textContent = "Error de conexión eliminando el modelo.";
+      }
+    }
+
     async function checkAuthOrRedirect() {
       const res = await fetch("/api/me", {
         credentials: "include",
@@ -78,11 +279,14 @@
         document.getElementById("staffWarning").style.display = "block";
         document.getElementById("uploadForm").style.display = "none";
         document.getElementById("downloadBox").style.display = "none";
+        document.getElementById("modelsBox").style.display = "none";
         return;
       }
 
       document.getElementById("uploadForm").style.display = "block";
       document.getElementById("downloadBox").style.display = "block";
+      document.getElementById("modelsBox").style.display = "block";
+      await loadModels();
     }
 
     document.getElementById("uploadForm").addEventListener("submit", async (e) => {
@@ -104,7 +308,7 @@
         return;
       }
 
-      status.textContent = "Subiendo…";
+      status.textContent = "Subiendo… El entrenamiento puede durar varios minutos";
       try {
         const res = await fetch("/api/dataset/upload", {
           method: "POST",
@@ -116,6 +320,7 @@
         const data = await res.json().catch(() => ({}));
         if (res.ok) {
           status.textContent = data.message || "Subida completada.";
+          await loadModels();
         } else {
           let msg = data.error || "Error al subir el archivo.";
 

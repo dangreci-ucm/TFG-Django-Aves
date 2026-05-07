@@ -246,6 +246,7 @@ def model_list(request):
         return staff_error
 
     models = ModelArtifact.objects.exclude(name__iexact="unknown").order_by("-created_at")
+    total_models = models.count()
 
     data = []
     for m in models:
@@ -255,6 +256,7 @@ def model_list(request):
             "created_at": m.created_at.isoformat(),
             "score": m.score,
             "is_active": m.is_active,
+            "can_delete": total_models > 1,
         })
 
     return JsonResponse({
@@ -292,6 +294,60 @@ def set_active_model(request, model_id):
         "message": "Modelo activado correctamente.",
         "model_id": model.id,
         "model_name": model.name,
+    })
+
+
+@login_required
+@require_http_methods(["DELETE"])
+def model_delete(request, model_id):
+    """
+    Elimina un modelo guardado. Solo staff.
+    No se permite borrar el único modelo disponible.
+    Si se borra el modelo activo, se activa automáticamente el más reciente restante.
+    """
+    staff_error = require_staff_api(request)
+    if staff_error:
+        return staff_error
+
+    queryset = ModelArtifact.objects.exclude(name__iexact="unknown")
+    total_models = queryset.count()
+
+    if total_models <= 1:
+        return JsonResponse(
+            {"ok": False, "error": "No se puede eliminar el único modelo disponible."},
+            status=400
+        )
+
+    model = queryset.filter(id=model_id).first()
+    if not model:
+        return JsonResponse(
+            {"ok": False, "error": "Modelo no encontrado."},
+            status=404
+        )
+
+    was_active = model.is_active
+
+    with transaction.atomic():
+        model.delete()
+
+        if was_active:
+            new_active = (
+                ModelArtifact.objects
+                .exclude(name__iexact="unknown")
+                .order_by("-created_at")
+                .first()
+            )
+
+            if new_active:
+                ModelArtifact.objects.update(is_active=False)
+                new_active.is_active = True
+                new_active.save(update_fields=["is_active"])
+
+    prediction_services.clear_model_cache()
+
+    return JsonResponse({
+        "ok": True,
+        "message": "Modelo eliminado correctamente."
     })
 
 
@@ -355,7 +411,6 @@ def build_aves_instances_from_df(df: pd.DataFrame):
     for _, row in df.iterrows():
         aves_to_create.append(
             Aves(
-                ident=str(row["IDENT"]).strip(),
                 especie=str(row["Especie"]).strip(),
                 coxalL=row["coxalL"],
                 coxalA=row["coxalA"],
@@ -406,7 +461,6 @@ def dataset_upload(request):
         )
 
     required_columns = [
-        "IDENT",
         "Especie",
         "coxalL",
         "coxalA",
@@ -453,6 +507,38 @@ def dataset_upload(request):
 
     df = df[required_columns].copy()
 
+    invalid_rows = []
+    for idx, row in df.iterrows():
+        missing_fields = []
+
+        for col in required_columns:
+            value = row[col]
+            if pd.isna(value):
+                missing_fields.append(col)
+            elif isinstance(value, str) and not value.strip():
+                missing_fields.append(col)
+
+        if 'Especie' in missing_fields:
+            invalid_rows.append({
+                "row_excel": int(idx) + 2,
+                "error": 'No contiene especie'
+            })
+        elif len(missing_fields) == len(required_columns)-1:
+            invalid_rows.append({
+                "row_excel": int(idx) + 2,
+                "error": 'No contiene valores'
+            })
+
+    if invalid_rows:
+        return JsonResponse(
+            {
+                "ok": False,
+                "error": "El Excel contiene fallos: todas las aves deben tener Especie y al menos un hueso.",
+                "invalid_rows": invalid_rows[:20]
+            },
+            status=400
+        )
+
     numeric_columns = [
         "coxalL",
         "coxalA",
@@ -466,43 +552,6 @@ def dataset_upload(request):
         "cubito",
         "radio",
     ]
-
-    invalid_rows = []
-    for idx, row in df.iterrows():
-        missing_fields = []
-
-        for col in required_columns:
-            value = row[col]
-            if pd.isna(value):
-                missing_fields.append(col)
-            elif isinstance(value, str) and not value.strip():
-                missing_fields.append(col)
-
-        if 'IDENT' in missing_fields:
-            invalid_rows.append({
-                "row_excel": int(idx) + 2,
-                "error": 'No contiene IDENT'
-            })
-        elif 'Especie' in missing_fields:
-            invalid_rows.append({
-                "row_excel": int(idx) + 2,
-                "error": 'No contiene especie'
-            })
-        elif all(col in missing_fields for col in numeric_columns):
-            invalid_rows.append({
-                "row_excel": int(idx) + 2,
-                "error": 'No contiene valores de huesos'
-            })
-
-    if invalid_rows:
-        return JsonResponse(
-            {
-                "ok": False,
-                "error": "El Excel contiene fallos: todas las aves deben tener Especie y al menos un hueso.",
-                "invalid_rows": invalid_rows[:20]
-            },
-            status=400
-        )
 
     for col in numeric_columns:
         try:
@@ -521,10 +570,7 @@ def dataset_upload(request):
                 {"ok": False, "error": "No hay datos de dataset disponibles en la base de datos."},
                 status=404
             )
-        idents = df["IDENT"].copy()
-        # La imputación trabaja solo con Especie + huesos; IDENT se restaura después.
-        imputed_df = impute_dataframes(df.drop(columns=["IDENT"]).copy(), dataset.copy())
-        imputed_df.insert(0, "IDENT", idents.values)
+        imputed_df = impute_dataframes(df, dataset)
     except Exception as e:
         return JsonResponse(
             {"ok": False, "error": f"Error preparando los datos para entrenamiento: {str(e)}"},
@@ -548,8 +594,6 @@ def dataset_upload(request):
     # Inserto aves_to_create en la base de datos
     try:
         with transaction.atomic():
-            # El upload sustituye el dataset activo completo.
-            Aves.objects.all().delete()
             Aves.objects.bulk_create(aves_to_create, batch_size=500)
             DatasetArtifact.objects.update(is_active=False)
             dataset_artifact = DatasetArtifact.objects.create(

@@ -25,6 +25,7 @@ urlpatterns = [
     path("api/dataset/stats", api_views.dataset_stats, name="dataset_stats"),
 
     path("api/models/<int:model_id>/activate", api_views.set_active_model, name="set_active_model"),  # REVISAR
+    path("api/models/<int:model_id>/delete", api_views.model_delete, name="model_delete"),
 
     path("api/users", api_views.user_list, name="user_list"),
     path("api/users/<int:user_id>/set-staff", api_views.user_set_staff, name="user_set_staff"),
