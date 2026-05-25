@@ -386,10 +386,10 @@
               input.max = maxVal;
             }
 
-            input.title = `Rango permitido: ${formatRangeNumber(minVal)} - ${formatRangeNumber(maxVal)} cm`;
+            input.title = `Rango permitido: ${formatRangeNumber(minVal)} - ${formatRangeNumber(maxVal)} mm`;
 
             if (help) {
-              help.textContent = `Rango: ${formatRangeNumber(minVal)} - ${formatRangeNumber(maxVal)} cm`;
+              help.textContent = `Rango: ${formatRangeNumber(minVal)} - ${formatRangeNumber(maxVal)} mm`;
             }
           });
         } catch (err) {
@@ -421,13 +421,13 @@
 
         if (Number.isFinite(minVal) && value < minVal) {
           input.classList.add("input-out-of-range");
-          input.setCustomValidity(`Valor menor que el mínimo permitido (${formatRangeNumber(minVal)} cm).`);
+          input.setCustomValidity(`Valor menor que el mínimo permitido (${formatRangeNumber(minVal)} mm).`);
           return false;
         }
 
         if (Number.isFinite(maxVal) && value > maxVal) {
           input.classList.add("input-out-of-range");
-          input.setCustomValidity(`Valor mayor que el máximo permitido (${formatRangeNumber(maxVal)} cm).`);
+          input.setCustomValidity(`Valor mayor que el máximo permitido (${formatRangeNumber(maxVal)} mm).`);
           return false;
         }
 
