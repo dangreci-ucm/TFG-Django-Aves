@@ -64,18 +64,25 @@ def validate_prediction_input_ranges(input_data):
     del dataset almacenado en Aves.
     """
     stats = Aves.objects.aggregate(
-        coxalL_min=Min("coxalL"), coxalL_max=Max("coxalL"),
-        coxalA_min=Min("coxalA"), coxalA_max=Max("coxalA"),
-        esternon_min=Min("esternon"), esternon_max=Max("esternon"),
-        femur_min=Min("femur"), femur_max=Max("femur"),
-        tibiotarso_min=Min("tibiotarso"), tibiotarso_max=Max("tibiotarso"),
-        tarsometatarso_min=Min("tarsometatarso"), tarsometatarso_max=Max("tarsometatarso"),
-        craneoA_min=Min("craneoancho"), craneoA_max=Max("craneoancho"),
-        craneoL_min=Min("craneolongitud"), craneoL_max=Max("craneolongitud"),
-        humero_min=Min("humero"), humero_max=Max("humero"),
-        cubito_min=Min("cubito"), cubito_max=Max("cubito"),
-        radio_min=Min("radio"), radio_max=Max("radio"),
+        coxalL_min=Floor(Min("coxalL")), coxalL_max=Ceil(Max("coxalL")),
+        coxalA_min=Floor(Min("coxalA")), coxalA_max=Ceil(Max("coxalA")),
+        esternon_min=Floor(Min("esternon")), esternon_max=Ceil(Max("esternon")),
+        femur_min=Floor(Min("femur")), femur_max=Ceil(Max("femur")),
+        tibiotarso_min=Floor(Min("tibiotarso")), tibiotarso_max=Ceil(Max("tibiotarso")),
+        tarsometatarso_min=Floor(Min("tarsometatarso")), tarsometatarso_max=Ceil(Max("tarsometatarso")),
+        craneoA_min=Floor(Min("craneoancho")), craneoA_max=Ceil(Max("craneoancho")),
+        craneoL_min=Floor(Min("craneolongitud")), craneoL_max=Ceil(Max("craneolongitud")),
+        humero_min=Floor(Min("humero")), humero_max=Ceil(Max("humero")),
+        cubito_min=Floor(Min("cubito")), cubito_max=Ceil(Max("cubito")),
+        radio_min=Floor(Min("radio")), radio_max=Ceil(Max("radio")),
     )
+    """
+    Cast a int en todos los valores (mejor aqui que modificar el frontend)
+    """
+    stats = {
+        key: int(value) if value is not None else None
+        for key, value in stats.items()
+    }
 
     field_labels = {
         "coxalL": "Longitud del Coxal",
