@@ -200,19 +200,39 @@ def calcular(request):
 
 
 @login_required
+@require_http_methods(["GET"])
 def historial_predicciones(request):
     """
-    Devuelve el historial del usuario autenticado.
+    Devuelve el historial de predicciones.
+
+    Usuario normal:
+    - Solo ve sus propias predicciones.
+
+    Usuario staff:
+    - scope=mine -> sus propias predicciones.
+    - scope=all -> todas las predicciones.
+    - user_id=<id> -> predicciones de un usuario concreto.
     """
-    logs = (
-        PredictionLog.objects
-        .filter(user=request.user)
-        .order_by("-created_at")
-    )
+    logs = PredictionLog.objects.select_related("user").all()
+
+    if request.user.is_staff:
+        scope = request.GET.get("scope", "mine")
+        user_id = request.GET.get("user_id")
+
+        if user_id:
+            logs = logs.filter(user_id=user_id)
+        elif scope == "all":
+            pass
+        else:
+            logs = logs.filter(user=request.user)
+    else:
+        logs = logs.filter(user=request.user)
+
+    logs = logs.order_by("-created_at")
 
     data = []
+
     for log in logs:
-        # limpiar nombre del modelo (quitar .joblib si existe)
         clean_model_name = (
             log.model_name.rsplit(".", 1)[0]
             if log.model_name else None
@@ -224,19 +244,31 @@ def historial_predicciones(request):
             "input_data": log.input_data,
             "result_data": log.result_data,
             "model_name": clean_model_name,
-            "user": request.user.username,  # para evitar undefined
+            "user": log.user.username if log.user else "Anónimo",
+            "user_id": log.user.id if log.user else None,
         })
 
-    return JsonResponse({"ok": True, "items": data})
-
+    return JsonResponse({
+        "ok": True,
+        "items": data,
+    })
 
 @login_required
 @require_http_methods(["DELETE"])
 def borrar_prediccion(request, prediction_id):
     """
-    Borra una predicción solo si pertenece al usuario autenticado.
+    Borra una predicción.
+
+    - Usuario normal: solo puede borrar sus propias predicciones.
+    - Staff: puede borrar cualquier predicción.
     """
-    deleted, _ = PredictionLog.objects.filter(id=prediction_id, user=request.user).delete()
+    if request.user.is_staff:
+        deleted, _ = PredictionLog.objects.filter(id=prediction_id).delete()
+    else:
+        deleted, _ = PredictionLog.objects.filter(
+            id=prediction_id,
+            user=request.user
+        ).delete()
 
     if deleted == 0:
         return JsonResponse(

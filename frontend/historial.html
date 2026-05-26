@@ -10,9 +10,7 @@
 
   <title>Historial de predicciones - TFG</title>
 
-  <!-- Librería para exportar a Excel -->
   <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
-
   <script defer src="/js/nav.js"></script>
 </head>
 
@@ -34,6 +32,14 @@
 
       <div id="historyFilters" style="margin-bottom: 2em; padding: 1em; background-color: rgba(29,71,121,.04);">
         <p><strong>Filtros</strong></p>
+
+        <div id="adminHistoryScopeWrapper" style="display:none; padding: 1em 0;">
+          <label for="historyScopeSelect"><strong>Predicciones:</strong></label><br>
+          <select id="historyScopeSelect" style="padding: 0.4em; margin-top: 0.5em;">
+            <option value="mine">Mis predicciones</option>
+            <option value="all">Todas</option>
+          </select>
+        </div>
 
         <div style="padding: 1em 0;">
           <label for="searchInput"><strong>Búsqueda:</strong></label><br>
@@ -80,20 +86,8 @@
   <script>
     let allLogs = [];
     let currentFilteredLogs = [];
-
-    const boneFields = [
-      "coxalL",
-      "coxalA",
-      "esternon",
-      "femur",
-      "tibiotarso",
-      "tarsometatarso",
-      "craneoA",
-      "craneoL",
-      "humero",
-      "cubito",
-      "radio"
-    ];
+    let currentUser = null;
+    let adminUsersLoaded = false;
 
     function getCookie(name) {
       let cookieValue = null;
@@ -144,7 +138,11 @@
     }
 
     async function checkAuthOrRedirect() {
-      const res = await fetch("/api/me", { credentials: "include" });
+      const res = await fetch("/api/me", {
+        credentials: "include",
+        cache: "no-store"
+      });
+
       const data = await res.json();
 
       if (!data.authenticated) {
@@ -154,7 +152,72 @@
         return false;
       }
 
+      currentUser = data;
       return true;
+    }
+
+    async function setupAdminHistorySelector() {
+      if (!currentUser || !currentUser.is_staff) return;
+
+      const wrapper = document.getElementById("adminHistoryScopeWrapper");
+      const select = document.getElementById("historyScopeSelect");
+
+      if (!wrapper || !select) return;
+
+      wrapper.style.display = "block";
+
+      if (adminUsersLoaded) return;
+
+      try {
+        const res = await fetch("/api/users", {
+          method: "GET",
+          credentials: "include",
+          cache: "no-store",
+          headers: {
+            "Accept": "application/json"
+          }
+        });
+
+        const data = await res.json();
+
+        if (!res.ok || !data.ok || !Array.isArray(data.items)) {
+          console.warn("No se pudieron cargar los usuarios.");
+          return;
+        }
+
+        data.items.forEach(user => {
+          const opt = document.createElement("option");
+          opt.value = `user:${user.id}`;
+          opt.textContent = user.username;
+          select.appendChild(opt);
+        });
+
+        adminUsersLoaded = true;
+
+      } catch (err) {
+        console.warn("Error cargando usuarios:", err);
+      }
+    }
+
+    function buildHistoryUrl() {
+      const select = document.getElementById("historyScopeSelect");
+
+      if (!currentUser || !currentUser.is_staff || !select) {
+        return "/api/predictions/history";
+      }
+
+      const value = select.value;
+
+      if (value === "all") {
+        return "/api/predictions/history?scope=all";
+      }
+
+      if (value.startsWith("user:")) {
+        const userId = value.replace("user:", "");
+        return `/api/predictions/history?user_id=${encodeURIComponent(userId)}`;
+      }
+
+      return "/api/predictions/history?scope=mine";
     }
 
     function formatInputData(inputData) {
@@ -418,6 +481,12 @@
 
       document.getElementById("downloadXlsx").addEventListener("click", exportFilteredHistoryToXlsx);
 
+      const historyScopeSelect = document.getElementById("historyScopeSelect");
+
+      if (historyScopeSelect) {
+        historyScopeSelect.addEventListener("change", loadHistory);
+      }
+
       document.getElementById("clearFilters").addEventListener("click", () => {
         document.getElementById("searchInput").value = "";
         document.getElementById("dateFrom").value = "";
@@ -431,13 +500,20 @@
       const authenticated = await checkAuthOrRedirect();
       if (!authenticated) return;
 
+      await setupAdminHistorySelector();
+
       const container = document.getElementById("historyContainer");
 
       try {
-        const res = await fetch("/api/predictions/history", {
+        container.innerHTML = "<p>Cargando historial...</p>";
+
+        const res = await fetch(buildHistoryUrl(), {
           method: "GET",
           credentials: "include",
-          headers: { "Accept": "application/json" }
+          cache: "no-store",
+          headers: {
+            "Accept": "application/json"
+          }
         });
 
         if (!res.ok) {
@@ -446,6 +522,12 @@
         }
 
         const data = await res.json();
+
+        if (!data.ok) {
+          container.innerHTML = "<p>Error al cargar el historial.</p>";
+          return;
+        }
+
         allLogs = data.items || [];
         applyFilters();
 
