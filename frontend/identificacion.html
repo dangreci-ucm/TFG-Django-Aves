@@ -37,7 +37,8 @@
         <div class="description">
             <h1><b>Registro de restos óseos</b></h1>
             <p>
-                Introduce la medida en centímetros de los distintos huesos que haya encontrado.
+                Introduce la medida en milímetros de los distintos huesos que haya encontrado.
+                Los campos más decisivos están marcados con ⭐.
             </p>
 
             <p id="guide">
@@ -82,7 +83,7 @@
                       </div>
 
                       <div class="label">
-                          Fémur:
+                          Fémur: ⭐
                           <input class="square" type="number" name="femur" min="0" step="any" placeholder="0 mm">
                           <small class="range-help" data-field="femur"></small>
                       </div>
@@ -94,7 +95,7 @@
                       </div>
 
                       <div class="label">
-                          Tarsometatarso:
+                          Tarsometatarso: ⭐
                           <input class="square" type="number" name="tarsometatarso" min="0" step="any" placeholder="0 mm">
                           <small class="range-help" data-field="tarsometatarso"></small>
                       </div>
@@ -118,7 +119,7 @@
                       </div>
 
                       <div class="label">
-                          Cúbito:
+                          Cúbito: ⭐
                           <input class="square" type="number" name="cubito" min="0" step="any" placeholder="0 mm">
                           <small class="range-help" data-field="cubito"></small>
                       </div>
@@ -389,7 +390,7 @@
             input.title = `Rango permitido: ${formatRangeNumber(minVal)} - ${formatRangeNumber(maxVal)} mm`;
 
             if (help) {
-              help.textContent = `Rango: ${formatRangeNumber(minVal)} - ${formatRangeNumber(maxVal)} mm`;
+              help.textContent = `Rango (min-max): ${formatRangeNumber(minVal)} - ${formatRangeNumber(maxVal)} mm`;
             }
           });
         } catch (err) {
