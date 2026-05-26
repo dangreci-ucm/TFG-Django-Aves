@@ -7,7 +7,12 @@
   <link href="https://fonts.googleapis.com/css2?family=Roboto&display=swap" rel="stylesheet">
   <meta name="viewport" content="width=device-width">
   <meta charset="UTF-8">
+
   <title>Historial de predicciones - TFG</title>
+
+  <!-- Librería para exportar a Excel -->
+  <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
+
   <script defer src="/js/nav.js"></script>
 </head>
 
@@ -60,6 +65,7 @@
 
         <div style="padding: 1em 0;">
           <button id="clearFilters" type="button">Limpiar filtros</button>
+          <button id="downloadXlsx" type="button">Descargar Excel</button>
         </div>
       </div>
 
@@ -73,49 +79,69 @@
 
   <script>
     let allLogs = [];
+    let currentFilteredLogs = [];
+
+    const boneFields = [
+      "coxalL",
+      "coxalA",
+      "esternon",
+      "femur",
+      "tibiotarso",
+      "tarsometatarso",
+      "craneoA",
+      "craneoL",
+      "humero",
+      "cubito",
+      "radio"
+    ];
 
     function getCookie(name) {
-    let cookieValue = null;
-    if (document.cookie && document.cookie !== "") {
-      const cookies = document.cookie.split(";");
-      for (let cookie of cookies) {
-        cookie = cookie.trim();
-        if (cookie.startsWith(name + "=")) {
-          cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
-          break;
+      let cookieValue = null;
+
+      if (document.cookie && document.cookie !== "") {
+        const cookies = document.cookie.split(";");
+
+        for (let cookie of cookies) {
+          cookie = cookie.trim();
+
+          if (cookie.startsWith(name + "=")) {
+            cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+            break;
+          }
         }
       }
+
+      return cookieValue;
     }
-    return cookieValue;
-  }
 
-  async function deletePrediction(predictionId) {
-    const confirmed = window.confirm("¿Seguro que quieres borrar esta predicción?");
-    if (!confirmed) return;
+    async function deletePrediction(predictionId) {
+      const confirmed = window.confirm("¿Seguro que quieres borrar esta predicción?");
+      if (!confirmed) return;
 
-    try {
-      const res = await fetch(`/api/predictions/${predictionId}/delete`, {
-        method: "DELETE",
-        credentials: "include",
-        headers: {
-          "X-CSRFToken": getCookie("csrftoken"),
-          "Accept": "application/json"
+      try {
+        const res = await fetch(`/api/predictions/${predictionId}/delete`, {
+          method: "DELETE",
+          credentials: "include",
+          headers: {
+            "X-CSRFToken": getCookie("csrftoken"),
+            "Accept": "application/json"
+          }
+        });
+
+        const data = await res.json();
+
+        if (!res.ok || !data.ok) {
+          alert(data.error || "No se pudo borrar la predicción.");
+          return;
         }
-      });
 
-      const data = await res.json();
+        allLogs = allLogs.filter(log => log.id !== predictionId);
+        applyFilters();
 
-      if (!res.ok || !data.ok) {
-        alert(data.error || "No se pudo borrar la predicción.");
-        return;
+      } catch (err) {
+        alert("Error de conexión al borrar la predicción.");
       }
-
-      allLogs = allLogs.filter(log => log.id !== predictionId);
-      applyFilters();
-    } catch (err) {
-      alert("Error de conexión al borrar la predicción.");
     }
-  }
 
     async function checkAuthOrRedirect() {
       const res = await fetch("/api/me", { credentials: "include" });
@@ -130,15 +156,17 @@
 
       return true;
     }
-    
+
     function formatInputData(inputData) {
       const entries = Object.entries(inputData || {});
       if (!entries.length) return "<p>Sin datos de entrada.</p>";
 
       let html = "<ul>";
+
       for (const [key, value] of entries) {
         html += `<li><strong>${key}</strong>: ${value}</li>`;
       }
+
       html += "</ul>";
       return html;
     }
@@ -149,6 +177,7 @@
       }
 
       let html = "<ol>";
+
       for (const item of resultData) {
         if (Array.isArray(item) && item.length >= 2) {
           html += `<li>${item[0]} - ${item[1]}%</li>`;
@@ -156,12 +185,13 @@
           html += `<li>${item.species || "Especie desconocida"} - ${item.probability || "?"}%</li>`;
         }
       }
+
       html += "</ol>";
       return html;
     }
 
     function getSearchableText(log) {
-      const username = (log.user  || "").toLowerCase();
+      const username = (log.user || "").toLowerCase();
       const modelName = (log.model_name || "").toLowerCase();
 
       const inputText = Object.entries(log.input_data || {})
@@ -170,14 +200,17 @@
         .toLowerCase();
 
       let resultText = "";
+
       if (Array.isArray(log.result_data)) {
         resultText = log.result_data.map(item => {
           if (Array.isArray(item) && item.length >= 2) {
             return `${item[0]} ${item[1]}`;
           }
+
           if (typeof item === "object" && item !== null) {
             return `${item.species || ""} ${item.probability || ""}`;
           }
+
           return "";
         }).join(" ").toLowerCase();
       }
@@ -225,12 +258,15 @@
         return sortOrder === "asc" ? dateA - dateB : dateB - dateA;
       });
 
+      currentFilteredLogs = filteredLogs;
+
       renderSummary(filteredLogs.length, allLogs.length);
       renderHistory(filteredLogs);
     }
 
     function renderSummary(filteredCount, totalCount) {
       const summary = document.getElementById("historySummary");
+
       summary.innerHTML = `
         <p>Mostrando <strong>${filteredCount}</strong> predicción(es) de un total de <strong>${totalCount}</strong>.</p>
       `;
@@ -286,11 +322,101 @@
       container.innerHTML = html;
     }
 
+    function getResultSpecies(resultData, index) {
+      if (!Array.isArray(resultData)) return "";
+
+      const item = resultData[index];
+      if (!item) return "";
+
+      if (Array.isArray(item) && item.length >= 2) {
+        return item[0] ?? "";
+      }
+
+      if (typeof item === "object" && item !== null) {
+        return item.species ?? "";
+      }
+
+      return "";
+    }
+
+    function getResultProbability(resultData, index) {
+      if (!Array.isArray(resultData)) return "";
+
+      const item = resultData[index];
+      if (!item) return "";
+
+      if (Array.isArray(item) && item.length >= 2) {
+        return item[1] ?? "";
+      }
+
+      if (typeof item === "object" && item !== null) {
+        return item.probability ?? "";
+      }
+
+      return "";
+    }
+
+    function exportFilteredHistoryToXlsx() {
+      if (!currentFilteredLogs.length) {
+        alert("No hay predicciones filtradas para descargar.");
+        return;
+      }
+
+      if (typeof XLSX === "undefined") {
+        alert("No se pudo cargar la librería para generar el Excel.");
+        return;
+      }
+
+      const rows = currentFilteredLogs.map(log => {
+        const input = log.input_data || {};
+        const resultData = Array.isArray(log.result_data) ? log.result_data : [];
+
+        return {
+          "Fecha": log.created_at ? new Date(log.created_at).toLocaleString() : "",
+          "Usuario": log.user || "",
+          "Modelo": log.model_name || "",
+
+          "coxalL": input.coxalL ?? "",
+          "coxalA": input.coxalA ?? "",
+          "esternon": input.esternon ?? "",
+          "femur": input.femur ?? "",
+          "tibiotarso": input.tibiotarso ?? "",
+          "tarsometatarso": input.tarsometatarso ?? "",
+          "craneoA": input.craneoA ?? "",
+          "craneoL": input.craneoL ?? "",
+          "humero": input.humero ?? "",
+          "cubito": input.cubito ?? "",
+          "radio": input.radio ?? "",
+
+          "Resultado 1": getResultSpecies(resultData, 0),
+          "Probabilidad 1 (%)": getResultProbability(resultData, 0),
+
+          "Resultado 2": getResultSpecies(resultData, 1),
+          "Probabilidad 2 (%)": getResultProbability(resultData, 1),
+
+          "Resultado 3": getResultSpecies(resultData, 2),
+          "Probabilidad 3 (%)": getResultProbability(resultData, 2)
+        };
+      });
+
+      const worksheet = XLSX.utils.json_to_sheet(rows);
+      const workbook = XLSX.utils.book_new();
+
+      XLSX.utils.book_append_sheet(workbook, worksheet, "Historial");
+
+      const today = new Date().toISOString().slice(0, 10);
+      const filename = `historial_predicciones_${today}.xlsx`;
+
+      XLSX.writeFile(workbook, filename);
+    }
+
     function wireFilters() {
       document.getElementById("searchInput").addEventListener("input", applyFilters);
       document.getElementById("dateFrom").addEventListener("change", applyFilters);
       document.getElementById("dateTo").addEventListener("change", applyFilters);
       document.getElementById("sortOrder").addEventListener("change", applyFilters);
+
+      document.getElementById("downloadXlsx").addEventListener("click", exportFilteredHistoryToXlsx);
 
       document.getElementById("clearFilters").addEventListener("click", () => {
         document.getElementById("searchInput").value = "";
@@ -322,10 +448,12 @@
         const data = await res.json();
         allLogs = data.items || [];
         applyFilters();
+
       } catch (err) {
         container.innerHTML = "<p>Error de conexión al cargar el historial.</p>";
       }
     }
+
     function wireDeleteButtons() {
       document.addEventListener("click", (event) => {
         const btn = event.target.closest(".delete-prediction-btn");
@@ -336,7 +464,7 @@
 
         deletePrediction(predictionId);
       });
-   }
+    }
 
     wireFilters();
     wireDeleteButtons();
