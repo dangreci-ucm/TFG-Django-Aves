@@ -14,7 +14,7 @@ from .models import Aves, DatasetArtifact, ModelArtifact, PredictionLog
 from .prediccion import Prediction
 from .services import prediction_services
 
-from django.db.models import Min, Max
+from django.db.models import Min, Max, IntegerField, Q
 from django.db.models.functions import Floor, Ceil
 
 from apptfg.services.dataset_services import get_aves_dataset
@@ -238,6 +238,14 @@ def historial_predicciones(request):
             if log.model_name else None
         )
 
+        can_delete = (
+            log.user_id == request.user.id
+            or (
+                request.user.is_staff
+                and log.user_id is None
+            )
+        )
+
         data.append({
             "id": log.id,
             "created_at": log.created_at.isoformat(),
@@ -246,6 +254,7 @@ def historial_predicciones(request):
             "model_name": clean_model_name,
             "user": log.user.username if log.user else "Anónimo",
             "user_id": log.user.id if log.user else None,
+            "can_delete": can_delete,
         })
 
     return JsonResponse({
@@ -260,10 +269,15 @@ def borrar_prediccion(request, prediction_id):
     Borra una predicción.
 
     - Usuario normal: solo puede borrar sus propias predicciones.
-    - Staff: puede borrar cualquier predicción.
+    - Staff: puede borrar sus propias predicciones y las predicciones anónimas.
+    - Staff no puede borrar predicciones de otros usuarios registrados.
     """
     if request.user.is_staff:
-        deleted, _ = PredictionLog.objects.filter(id=prediction_id).delete()
+        # Q permite combinar condiciones con OR: predicción propia o predicción anónima.
+        deleted, _ = PredictionLog.objects.filter(
+            Q(id=prediction_id),
+            Q(user=request.user) | Q(user__isnull=True)
+        ).delete()
     else:
         deleted, _ = PredictionLog.objects.filter(
             id=prediction_id,
@@ -272,7 +286,7 @@ def borrar_prediccion(request, prediction_id):
 
     if deleted == 0:
         return JsonResponse(
-            {"ok": False, "error": "Predicción no encontrada o sin permisos."},
+            {"ok": False, "error": "Predicción no encontrada o sin permisos para borrarla."},
             status=404
         )
 

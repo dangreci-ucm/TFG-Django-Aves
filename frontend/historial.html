@@ -84,274 +84,287 @@
   </div>
 
   <script>
-    let allLogs = [];
-    let currentFilteredLogs = [];
-    let currentUser = null;
-    let adminUsersLoaded = false;
 
-    function getCookie(name) {
-      let cookieValue = null;
+  let allLogs = [];
+  let currentFilteredLogs = [];
+  let currentUser = null;
+  let adminUsersLoaded = false;
 
-      if (document.cookie && document.cookie !== "") {
-        const cookies = document.cookie.split(";");
+  function getCookie(name) {
+    let cookieValue = null;
 
-        for (let cookie of cookies) {
-          cookie = cookie.trim();
+    if (document.cookie && document.cookie !== "") {
+      const cookies = document.cookie.split(";");
 
-          if (cookie.startsWith(name + "=")) {
-            cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
-            break;
-          }
+      for (let cookie of cookies) {
+        cookie = cookie.trim();
+
+        if (cookie.startsWith(name + "=")) {
+          cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+          break;
         }
-      }
-
-      return cookieValue;
-    }
-
-    async function deletePrediction(predictionId) {
-      const confirmed = window.confirm("¿Seguro que quieres borrar esta predicción?");
-      if (!confirmed) return;
-
-      try {
-        const res = await fetch(`/api/predictions/${predictionId}/delete`, {
-          method: "DELETE",
-          credentials: "include",
-          headers: {
-            "X-CSRFToken": getCookie("csrftoken"),
-            "Accept": "application/json"
-          }
-        });
-
-        const data = await res.json();
-
-        if (!res.ok || !data.ok) {
-          alert(data.error || "No se pudo borrar la predicción.");
-          return;
-        }
-
-        allLogs = allLogs.filter(log => log.id !== predictionId);
-        applyFilters();
-
-      } catch (err) {
-        alert("Error de conexión al borrar la predicción.");
       }
     }
 
-    async function checkAuthOrRedirect() {
-      const res = await fetch("/api/me", {
+    return cookieValue;
+  }
+
+
+  async function deletePrediction(predictionId) {
+    const confirmed = window.confirm("¿Seguro que quieres borrar esta predicción?");
+    if (!confirmed) return;
+
+    try {
+      const res = await fetch(`/api/predictions/${predictionId}/delete`, {
+        method: "DELETE",
         credentials: "include",
-        cache: "no-store"
+        headers: {
+          "X-CSRFToken": getCookie("csrftoken"),
+          "Accept": "application/json"
+        }
       });
 
       const data = await res.json();
 
-      if (!data.authenticated) {
-        document.getElementById("authWarning").style.display = "block";
-        const next = encodeURIComponent("/historial.html");
-        window.location.href = `/accounts/login/?next=${next}`;
-        return false;
-      }
-
-      currentUser = data;
-      return true;
-    }
-
-    async function setupAdminHistorySelector() {
-      if (!currentUser || !currentUser.is_staff) return;
-
-      const wrapper = document.getElementById("adminHistoryScopeWrapper");
-      const select = document.getElementById("historyScopeSelect");
-
-      if (!wrapper || !select) return;
-
-      wrapper.style.display = "block";
-
-      if (adminUsersLoaded) return;
-
-      try {
-        const res = await fetch("/api/users", {
-          method: "GET",
-          credentials: "include",
-          cache: "no-store",
-          headers: {
-            "Accept": "application/json"
-          }
-        });
-
-        const data = await res.json();
-
-        if (!res.ok || !data.ok || !Array.isArray(data.items)) {
-          console.warn("No se pudieron cargar los usuarios.");
-          return;
-        }
-
-        data.items.forEach(user => {
-          const opt = document.createElement("option");
-          opt.value = `user:${user.id}`;
-          opt.textContent = user.username;
-          select.appendChild(opt);
-        });
-
-        adminUsersLoaded = true;
-
-      } catch (err) {
-        console.warn("Error cargando usuarios:", err);
-      }
-    }
-
-    function buildHistoryUrl() {
-      const select = document.getElementById("historyScopeSelect");
-
-      if (!currentUser || !currentUser.is_staff || !select) {
-        return "/api/predictions/history";
-      }
-
-      const value = select.value;
-
-      if (value === "all") {
-        return "/api/predictions/history?scope=all";
-      }
-
-      if (value.startsWith("user:")) {
-        const userId = value.replace("user:", "");
-        return `/api/predictions/history?user_id=${encodeURIComponent(userId)}`;
-      }
-
-      return "/api/predictions/history?scope=mine";
-    }
-
-    function formatInputData(inputData) {
-      const entries = Object.entries(inputData || {});
-      if (!entries.length) return "<p>Sin datos de entrada.</p>";
-
-      let html = "<ul>";
-
-      for (const [key, value] of entries) {
-        html += `<li><strong>${key}</strong>: ${value}</li>`;
-      }
-
-      html += "</ul>";
-      return html;
-    }
-
-    function formatResultData(resultData) {
-      if (!Array.isArray(resultData) || !resultData.length) {
-        return "<p>Sin resultados.</p>";
-      }
-
-      let html = "<ol>";
-
-      for (const item of resultData) {
-        if (Array.isArray(item) && item.length >= 2) {
-          html += `<li>${item[0]} - ${item[1]}%</li>`;
-        } else if (typeof item === "object" && item !== null) {
-          html += `<li>${item.species || "Especie desconocida"} - ${item.probability || "?"}%</li>`;
-        }
-      }
-
-      html += "</ol>";
-      return html;
-    }
-
-    function getSearchableText(log) {
-      const username = (log.user || "").toLowerCase();
-      const modelName = (log.model_name || "").toLowerCase();
-
-      const inputText = Object.entries(log.input_data || {})
-        .map(([key, value]) => `${key} ${value}`)
-        .join(" ")
-        .toLowerCase();
-
-      let resultText = "";
-
-      if (Array.isArray(log.result_data)) {
-        resultText = log.result_data.map(item => {
-          if (Array.isArray(item) && item.length >= 2) {
-            return `${item[0]} ${item[1]}`;
-          }
-
-          if (typeof item === "object" && item !== null) {
-            return `${item.species || ""} ${item.probability || ""}`;
-          }
-
-          return "";
-        }).join(" ").toLowerCase();
-      }
-
-      return `${username} ${modelName} ${inputText} ${resultText}`;
-    }
-
-    function applyFilters() {
-      const searchValue = (document.getElementById("searchInput").value || "").trim().toLowerCase();
-      const dateFromValue = document.getElementById("dateFrom").value;
-      const dateToValue = document.getElementById("dateTo").value;
-      const sortOrder = document.getElementById("sortOrder").value;
-
-      let filteredLogs = [...allLogs];
-
-      if (searchValue) {
-        filteredLogs = filteredLogs.filter(log => {
-          return getSearchableText(log).includes(searchValue);
-        });
-      }
-
-      if (dateFromValue) {
-        const dateFrom = new Date(dateFromValue);
-        dateFrom.setHours(0, 0, 0, 0);
-
-        filteredLogs = filteredLogs.filter(log => {
-          const logDate = new Date(log.created_at);
-          return logDate >= dateFrom;
-        });
-      }
-
-      if (dateToValue) {
-        const dateTo = new Date(dateToValue);
-        dateTo.setHours(23, 59, 59, 999);
-
-        filteredLogs = filteredLogs.filter(log => {
-          const logDate = new Date(log.created_at);
-          return logDate <= dateTo;
-        });
-      }
-
-      filteredLogs.sort((a, b) => {
-        const dateA = new Date(a.created_at).getTime();
-        const dateB = new Date(b.created_at).getTime();
-        return sortOrder === "asc" ? dateA - dateB : dateB - dateA;
-      });
-
-      currentFilteredLogs = filteredLogs;
-
-      renderSummary(filteredLogs.length, allLogs.length);
-      renderHistory(filteredLogs);
-    }
-
-    function renderSummary(filteredCount, totalCount) {
-      const summary = document.getElementById("historySummary");
-
-      summary.innerHTML = `
-        <p>Mostrando <strong>${filteredCount}</strong> predicción(es) de un total de <strong>${totalCount}</strong>.</p>
-      `;
-    }
-
-    function renderHistory(logs) {
-      const container = document.getElementById("historyContainer");
-
-      if (!logs.length) {
-        container.innerHTML = "<p>No hay predicciones que coincidan con los filtros.</p>";
+      if (!res.ok || !data.ok) {
+        alert(data.error || "No se pudo borrar la predicción.");
         return;
       }
 
-      let html = "";
+      allLogs = allLogs.filter(log => log.id !== predictionId);
+      applyFilters();
 
-      logs.forEach((log, index) => {
-        const date = new Date(log.created_at).toLocaleString();
+    } catch (err) {
+      alert("Error de conexión al borrar la predicción.");
+    }
+  }
 
-        html += `
-          <div class="history-card" data-prediction-row="${log.id}">
-            <div class="history-card-header">
-              <h2 class="history-card-title">Predicción #${index + 1}</h2>
+
+  async function checkAuthOrRedirect() {
+    const res = await fetch("/api/me", {
+      credentials: "include",
+      cache: "no-store"
+    });
+
+    const data = await res.json();
+
+    if (!data.authenticated) {
+      document.getElementById("authWarning").style.display = "block";
+      const next = encodeURIComponent("/historial.html");
+      window.location.href = `/accounts/login/?next=${next}`;
+      return false;
+    }
+
+    currentUser = data;
+    return true;
+  }
+
+
+  async function setupAdminHistorySelector() {
+    if (!currentUser || !currentUser.is_staff) return;
+
+    const wrapper = document.getElementById("adminHistoryScopeWrapper");
+    const select = document.getElementById("historyScopeSelect");
+
+    if (!wrapper || !select) return;
+
+    wrapper.style.display = "block";
+
+    if (adminUsersLoaded) return;
+
+    try {
+      const res = await fetch("/api/users", {
+        method: "GET",
+        credentials: "include",
+        cache: "no-store",
+        headers: {
+          "Accept": "application/json"
+        }
+      });
+
+      const data = await res.json();
+
+      if (!res.ok || !data.ok || !Array.isArray(data.items)) {
+        console.warn("No se pudieron cargar los usuarios.");
+        return;
+      }
+
+      data.items.forEach(user => {
+        const opt = document.createElement("option");
+        opt.value = `user:${user.id}`;
+        opt.textContent = user.username;
+        select.appendChild(opt);
+      });
+
+      adminUsersLoaded = true;
+
+    } catch (err) {
+      console.warn("Error cargando usuarios:", err);
+    }
+  }
+
+
+  function buildHistoryUrl() {
+    const select = document.getElementById("historyScopeSelect");
+
+    if (!currentUser || !currentUser.is_staff || !select) {
+      return "/api/predictions/history";
+    }
+
+    const value = select.value;
+
+    if (value === "all") {
+      return "/api/predictions/history?scope=all";
+    }
+
+    if (value.startsWith("user:")) {
+      const userId = value.replace("user:", "");
+      return `/api/predictions/history?user_id=${encodeURIComponent(userId)}`;
+    }
+
+    return "/api/predictions/history?scope=mine";
+  }
+
+
+  function formatInputData(inputData) {
+    const entries = Object.entries(inputData || {});
+    if (!entries.length) return "<p>Sin datos de entrada.</p>";
+
+    let html = "<ul>";
+
+    for (const [key, value] of entries) {
+      html += `<li><strong>${key}</strong>: ${value}</li>`;
+    }
+
+    html += "</ul>";
+    return html;
+  }
+
+
+  function formatResultData(resultData) {
+    if (!Array.isArray(resultData) || !resultData.length) {
+      return "<p>Sin resultados.</p>";
+    }
+
+    let html = "<ol>";
+
+    for (const item of resultData) {
+      if (Array.isArray(item) && item.length >= 2) {
+        html += `<li>${item[0]} - ${item[1]}%</li>`;
+      } else if (typeof item === "object" && item !== null) {
+        html += `<li>${item.species || "Especie desconocida"} - ${item.probability || "?"}%</li>`;
+      }
+    }
+
+    html += "</ol>";
+    return html;
+  }
+
+
+  function getSearchableText(log) {
+    const username = (log.user || "").toLowerCase();
+    const modelName = (log.model_name || "").toLowerCase();
+
+    const inputText = Object.entries(log.input_data || {})
+      .map(([key, value]) => `${key} ${value}`)
+      .join(" ")
+      .toLowerCase();
+
+    let resultText = "";
+
+    if (Array.isArray(log.result_data)) {
+      resultText = log.result_data.map(item => {
+        if (Array.isArray(item) && item.length >= 2) {
+          return `${item[0]} ${item[1]}`;
+        }
+
+        if (typeof item === "object" && item !== null) {
+          return `${item.species || ""} ${item.probability || ""}`;
+        }
+
+        return "";
+      }).join(" ").toLowerCase();
+    }
+
+    return `${username} ${modelName} ${inputText} ${resultText}`;
+  }
+
+
+  function applyFilters() {
+    const searchValue = (document.getElementById("searchInput").value || "").trim().toLowerCase();
+    const dateFromValue = document.getElementById("dateFrom").value;
+    const dateToValue = document.getElementById("dateTo").value;
+    const sortOrder = document.getElementById("sortOrder").value;
+
+    let filteredLogs = [...allLogs];
+
+    if (searchValue) {
+      filteredLogs = filteredLogs.filter(log => {
+        return getSearchableText(log).includes(searchValue);
+      });
+    }
+
+    if (dateFromValue) {
+      const dateFrom = new Date(dateFromValue);
+      dateFrom.setHours(0, 0, 0, 0);
+
+      filteredLogs = filteredLogs.filter(log => {
+        const logDate = new Date(log.created_at);
+        return logDate >= dateFrom;
+      });
+    }
+
+    if (dateToValue) {
+      const dateTo = new Date(dateToValue);
+      dateTo.setHours(23, 59, 59, 999);
+
+      filteredLogs = filteredLogs.filter(log => {
+        const logDate = new Date(log.created_at);
+        return logDate <= dateTo;
+      });
+    }
+
+    filteredLogs.sort((a, b) => {
+      const dateA = new Date(a.created_at).getTime();
+      const dateB = new Date(b.created_at).getTime();
+      return sortOrder === "asc" ? dateA - dateB : dateB - dateA;
+    });
+
+    currentFilteredLogs = filteredLogs;
+
+    renderSummary(filteredLogs.length, allLogs.length);
+    renderHistory(filteredLogs);
+  }
+
+
+  function renderSummary(filteredCount, totalCount) {
+    const summary = document.getElementById("historySummary");
+
+    summary.innerHTML = `
+      <p>Mostrando <strong>${filteredCount}</strong> predicción(es) de un total de <strong>${totalCount}</strong>.</p>
+    `;
+  }
+
+
+  function renderHistory(logs) {
+    const container = document.getElementById("historyContainer");
+
+    if (!logs.length) {
+      container.innerHTML = "<p>No hay predicciones que coincidan con los filtros.</p>";
+      return;
+    }
+
+    let html = "";
+
+    logs.forEach((log, index) => {
+      const date = new Date(log.created_at).toLocaleString();
+
+      html += `
+        <div class="history-card" data-prediction-row="${log.id}">
+          <div class="history-card-header">
+            <h2 class="history-card-title">Predicción #${index + 1}</h2>
+
+            ${log.can_delete ? `
               <button
                 type="button"
                 class="delete-prediction-btn"
@@ -359,33 +372,36 @@
                 title="Borrar predicción"
                 aria-label="Borrar predicción"
               >×</button>
+            ` : ""}
+          </div>
+
+          <div class="history-meta">
+            <div class="history-meta-item"><strong>Fecha:</strong> ${date}</div>
+            <div class="history-meta-item"><strong>Usuario:</strong> ${log.user || "—"}</div>
+            <div class="history-meta-item"><strong>Modelo:</strong> ${log.model_name || "—"}</div>
+          </div>
+
+          <div class="history-sections">
+            <div class="history-section">
+              <h3>Datos de entrada</h3>
+              ${formatInputData(log.input_data)}
             </div>
 
-            <div class="history-meta">
-              <div class="history-meta-item"><strong>Fecha:</strong> ${date}</div>
-              <div class="history-meta-item"><strong>Usuario:</strong> ${log.user || "—"}</div>
-              <div class="history-meta-item"><strong>Modelo:</strong> ${log.model_name || "—"}</div>
-            </div>
-
-            <div class="history-sections">
-              <div class="history-section">
-                <h3>Datos de entrada</h3>
-                ${formatInputData(log.input_data)}
-              </div>
-
-              <div class="history-section">
-                <h3>Resultados</h3>
-                ${formatResultData(log.result_data)}
-              </div>
+            <div class="history-section">
+              <h3>Resultados</h3>
+              ${formatResultData(log.result_data)}
             </div>
           </div>
-        `;
-      });
+        </div>
+      `;
+    });
 
-      container.innerHTML = html;
-    }
+    container.innerHTML = html;
+  }
 
-    function getResultSpecies(resultData, index) {
+
+
+  function getResultSpecies(resultData, index) {
       if (!Array.isArray(resultData)) return "";
 
       const item = resultData[index];
@@ -400,9 +416,10 @@
       }
 
       return "";
-    }
+  }
 
-    function getResultProbability(resultData, index) {
+
+  function getResultProbability(resultData, index) {
       if (!Array.isArray(resultData)) return "";
 
       const item = resultData[index];
@@ -417,140 +434,144 @@
       }
 
       return "";
+  }
+
+
+  function exportFilteredHistoryToXlsx() {
+    if (!currentFilteredLogs.length) {
+      alert("No hay predicciones filtradas para descargar.");
+      return;
     }
 
-    function exportFilteredHistoryToXlsx() {
-      if (!currentFilteredLogs.length) {
-        alert("No hay predicciones filtradas para descargar.");
+    if (typeof XLSX === "undefined") {
+      alert("No se pudo cargar la librería para generar el Excel.");
+      return;
+    }
+
+    const rows = currentFilteredLogs.map(log => {
+      const input = log.input_data || {};
+      const resultData = Array.isArray(log.result_data) ? log.result_data : [];
+
+      return {
+        "Fecha": log.created_at ? new Date(log.created_at).toLocaleString() : "",
+        "Usuario": log.user || "",
+        "Modelo": log.model_name || "",
+
+        "coxalL": input.coxalL ?? "",
+        "coxalA": input.coxalA ?? "",
+        "esternon": input.esternon ?? "",
+        "femur": input.femur ?? "",
+        "tibiotarso": input.tibiotarso ?? "",
+        "tarsometatarso": input.tarsometatarso ?? "",
+        "craneoA": input.craneoA ?? "",
+        "craneoL": input.craneoL ?? "",
+        "humero": input.humero ?? "",
+        "cubito": input.cubito ?? "",
+        "radio": input.radio ?? "",
+
+        "Resultado 1": getResultSpecies(resultData, 0),
+        "Probabilidad 1 (%)": getResultProbability(resultData, 0),
+
+        "Resultado 2": getResultSpecies(resultData, 1),
+        "Probabilidad 2 (%)": getResultProbability(resultData, 1),
+
+        "Resultado 3": getResultSpecies(resultData, 2),
+        "Probabilidad 3 (%)": getResultProbability(resultData, 2)
+      };
+    });
+
+    const worksheet = XLSX.utils.json_to_sheet(rows);
+    const workbook = XLSX.utils.book_new();
+
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Historial");
+
+    const today = new Date().toISOString().slice(0, 10);
+    const filename = `historial_predicciones_${today}.xlsx`;
+
+    XLSX.writeFile(workbook, filename);
+  }
+
+
+  function wireFilters() {
+    document.getElementById("searchInput").addEventListener("input", applyFilters);
+    document.getElementById("dateFrom").addEventListener("change", applyFilters);
+    document.getElementById("dateTo").addEventListener("change", applyFilters);
+    document.getElementById("sortOrder").addEventListener("change", applyFilters);
+
+    document.getElementById("downloadXlsx").addEventListener("click", exportFilteredHistoryToXlsx);
+
+    const historyScopeSelect = document.getElementById("historyScopeSelect");
+
+    if (historyScopeSelect) {
+      historyScopeSelect.addEventListener("change", loadHistory);
+    }
+
+    document.getElementById("clearFilters").addEventListener("click", () => {
+      document.getElementById("searchInput").value = "";
+      document.getElementById("dateFrom").value = "";
+      document.getElementById("dateTo").value = "";
+      document.getElementById("sortOrder").value = "desc";
+      applyFilters();
+    });
+  }
+
+
+  async function loadHistory() {
+    const authenticated = await checkAuthOrRedirect();
+    if (!authenticated) return;
+
+    await setupAdminHistorySelector();
+
+    const container = document.getElementById("historyContainer");
+
+    try {
+      container.innerHTML = "<p>Cargando historial...</p>";
+
+      const res = await fetch(buildHistoryUrl(), {
+        method: "GET",
+        credentials: "include",
+        cache: "no-store",
+        headers: {
+          "Accept": "application/json"
+        }
+      });
+
+      if (!res.ok) {
+        container.innerHTML = "<p>Error al cargar el historial.</p>";
         return;
       }
 
-      if (typeof XLSX === "undefined") {
-        alert("No se pudo cargar la librería para generar el Excel.");
+      const data = await res.json();
+
+      if (!data.ok) {
+        container.innerHTML = "<p>Error al cargar el historial.</p>";
         return;
       }
 
-      const rows = currentFilteredLogs.map(log => {
-        const input = log.input_data || {};
-        const resultData = Array.isArray(log.result_data) ? log.result_data : [];
+      allLogs = data.items || [];
+      applyFilters();
 
-        return {
-          "Fecha": log.created_at ? new Date(log.created_at).toLocaleString() : "",
-          "Usuario": log.user || "",
-          "Modelo": log.model_name || "",
-
-          "coxalL": input.coxalL ?? "",
-          "coxalA": input.coxalA ?? "",
-          "esternon": input.esternon ?? "",
-          "femur": input.femur ?? "",
-          "tibiotarso": input.tibiotarso ?? "",
-          "tarsometatarso": input.tarsometatarso ?? "",
-          "craneoA": input.craneoA ?? "",
-          "craneoL": input.craneoL ?? "",
-          "humero": input.humero ?? "",
-          "cubito": input.cubito ?? "",
-          "radio": input.radio ?? "",
-
-          "Resultado 1": getResultSpecies(resultData, 0),
-          "Probabilidad 1 (%)": getResultProbability(resultData, 0),
-
-          "Resultado 2": getResultSpecies(resultData, 1),
-          "Probabilidad 2 (%)": getResultProbability(resultData, 1),
-
-          "Resultado 3": getResultSpecies(resultData, 2),
-          "Probabilidad 3 (%)": getResultProbability(resultData, 2)
-        };
-      });
-
-      const worksheet = XLSX.utils.json_to_sheet(rows);
-      const workbook = XLSX.utils.book_new();
-
-      XLSX.utils.book_append_sheet(workbook, worksheet, "Historial");
-
-      const today = new Date().toISOString().slice(0, 10);
-      const filename = `historial_predicciones_${today}.xlsx`;
-
-      XLSX.writeFile(workbook, filename);
+    } catch (err) {
+      container.innerHTML = "<p>Error de conexión al cargar el historial.</p>";
     }
+  }
+  
 
-    function wireFilters() {
-      document.getElementById("searchInput").addEventListener("input", applyFilters);
-      document.getElementById("dateFrom").addEventListener("change", applyFilters);
-      document.getElementById("dateTo").addEventListener("change", applyFilters);
-      document.getElementById("sortOrder").addEventListener("change", applyFilters);
+  function wireDeleteButtons() {
+    document.addEventListener("click", (event) => {
+      const btn = event.target.closest(".delete-prediction-btn");
+      if (!btn) return;
 
-      document.getElementById("downloadXlsx").addEventListener("click", exportFilteredHistoryToXlsx);
+      const predictionId = parseInt(btn.dataset.id, 10);
+      if (!predictionId) return;
 
-      const historyScopeSelect = document.getElementById("historyScopeSelect");
+      deletePrediction(predictionId);
+    });
+  }
 
-      if (historyScopeSelect) {
-        historyScopeSelect.addEventListener("change", loadHistory);
-      }
-
-      document.getElementById("clearFilters").addEventListener("click", () => {
-        document.getElementById("searchInput").value = "";
-        document.getElementById("dateFrom").value = "";
-        document.getElementById("dateTo").value = "";
-        document.getElementById("sortOrder").value = "desc";
-        applyFilters();
-      });
-    }
-
-    async function loadHistory() {
-      const authenticated = await checkAuthOrRedirect();
-      if (!authenticated) return;
-
-      await setupAdminHistorySelector();
-
-      const container = document.getElementById("historyContainer");
-
-      try {
-        container.innerHTML = "<p>Cargando historial...</p>";
-
-        const res = await fetch(buildHistoryUrl(), {
-          method: "GET",
-          credentials: "include",
-          cache: "no-store",
-          headers: {
-            "Accept": "application/json"
-          }
-        });
-
-        if (!res.ok) {
-          container.innerHTML = "<p>Error al cargar el historial.</p>";
-          return;
-        }
-
-        const data = await res.json();
-
-        if (!data.ok) {
-          container.innerHTML = "<p>Error al cargar el historial.</p>";
-          return;
-        }
-
-        allLogs = data.items || [];
-        applyFilters();
-
-      } catch (err) {
-        container.innerHTML = "<p>Error de conexión al cargar el historial.</p>";
-      }
-    }
-
-    function wireDeleteButtons() {
-      document.addEventListener("click", (event) => {
-        const btn = event.target.closest(".delete-prediction-btn");
-        if (!btn) return;
-
-        const predictionId = parseInt(btn.dataset.id, 10);
-        if (!predictionId) return;
-
-        deletePrediction(predictionId);
-      });
-    }
-
-    wireFilters();
-    wireDeleteButtons();
-    loadHistory();
+  wireFilters();
+  wireDeleteButtons();
+  loadHistory();
   </script>
 </body>
 </html>
