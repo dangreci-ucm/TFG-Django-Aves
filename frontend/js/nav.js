@@ -15,11 +15,11 @@
 
           <!-- NUEVO: oculto por defecto, se mostrará solo si hay sesión -->
           <a href="/upload.html"
-             title="Subir dataset"
+             title="Gestionar dataset"
              class="nav-link"
              data-path="/upload.html"
              id="nav-upload-inline"
-             style="display:none;">SUBIR DATASET</a>
+             style="display:none;">GESTIONAR DATASET</a>
 
           <!-- NUEVO: oculto por defecto, se mostrará solo si hay sesión -->
           <a href="/historial.html"
@@ -50,7 +50,7 @@
             <a href="/upload.html"
             role="menuitem"
             id="nav-upload-link"
-            style="display:none;">SUBIR DATASET</a>
+            style="display:none;">GESTIONAR DATASET</a>
 
              <!-- NUEVO: oculto por defecto, se mostrará solo si hay sesión -->
             <a href="/historial.html"
