@@ -308,7 +308,7 @@
         return;
       }
 
-      status.textContent = "Subiendo… El entrenamiento puede durar varios minutos";
+      status.textContent = "Subiendo… El entrenamiento puede llevar un tiempo";
       try {
         const res = await fetch("/api/dataset/upload", {
           method: "POST",
