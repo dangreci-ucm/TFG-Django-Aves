@@ -1,14 +1,16 @@
-import io
 from dataclasses import dataclass
 from typing import Dict, List, Tuple
+import io
 
 import joblib
 import numpy as np
-from sklearn.impute import KNNImputer
+
 from sklearn.model_selection import StratifiedKFold, GridSearchCV
-from sklearn.naive_bayes import GaussianNB
+from sklearn.ensemble import RandomForestClassifier
 from sklearn.pipeline import Pipeline
+
 from sklearn.preprocessing import LabelEncoder, StandardScaler
+from sklearn.impute import SimpleImputer
 
 from apptfg.services.dataset_services import get_aves_dataset
 
@@ -19,7 +21,7 @@ class ModelBundle:
     Modelo serializable que guardaremos en PostgreSQL como binario.
     - model: modelo comprimido con joblib
     """
-    model: GaussianNB
+    model: RandomForestClassifier
     feature_names: List[str]
     species_names: List[str]
     score: float
@@ -48,13 +50,17 @@ class Prediction:
         y_encoded = label_encoder.fit_transform(y)
 
         pipeline = Pipeline([
-            ('imputer', KNNImputer()),
+            ('imputer', SimpleImputer(strategy='mean')),
             ('scaler', StandardScaler()),  # normalizamos las variables
-            ('classifier', GaussianNB())  # modelo elegido
+            ('classifier', RandomForestClassifier(random_state=42))  # modelo elegido
         ])
 
         parameters = {
-            'classifier__var_smoothing': np.logspace(0, -9, num=100)
+            # Render free es limitado: evitar una búsqueda enorme en cada upload.
+            'classifier__n_estimators': [100],
+            'classifier__max_depth': [None, 20],
+            'classifier__min_samples_split': [2, 5],
+            'classifier__min_samples_leaf': [1, 2]
         }
 
         # Configura la validación cruzada

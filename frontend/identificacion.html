@@ -268,13 +268,11 @@
 
           msgTitle.textContent = "Resultados";
 
-          resultsList.innerHTML = results.map(([especie, prob], index) => {
+          resultsList.innerHTML = results.map(([especie, prob]) => {
             const imgSrc = `/img/img_aves/${especie}.jpg`;
-            const top = index === 0 ? 'primera' : index === 1 ? 'segunda' : 'tercera';
-            const medal = index === 0 ? '🥇' : index === 1 ? '🥈' : '🥉';
             return `
               <li>
-                <p><b>${medal} ${especie}</b> como ${top} opción</p>
+                <p><b>${especie}</b> con una probabilidad del <b>${prob}%</b></p>
                 <div class="bird">
                   <img alt="${especie}" src="${imgSrc}">
                   <div class="overlay">${especie}</div>

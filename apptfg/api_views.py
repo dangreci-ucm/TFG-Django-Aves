@@ -465,7 +465,6 @@ def build_aves_instances_from_df(df: pd.DataFrame):
     for _, row in df.iterrows():
         aves_to_create.append(
             Aves(
-                ident=str(row["IDENT"]).strip(),
                 especie=str(row["Especie"]).strip(),
                 coxalL=row["coxalL"],
                 coxalA=row["coxalA"],
@@ -490,11 +489,12 @@ def dataset_upload(request):
     """
     Flujo:
     1. Validar Excel subido
-    2. Reemplazar la tabla Aves con el dataset actual
-    3. Entrenar nuevo modelo en memoria
-    4. Crear DatasetArtifact
-    5. Crear ModelArtifact con model_blob
-    6. Marcar ambos como activos
+    2. Rellenar valores nulos usando el dataset actual
+    3. Reemplazar la tabla Aves con las nuevas entradas
+    4. Entrenar nuevo modelo en memoria
+    5. Crear DatasetArtifact
+    6. Crear ModelArtifact con model_blob
+    7. Marcar ambos como activos
     Solo staff.
     """
     staff_error = require_staff_api(request)
@@ -516,7 +516,6 @@ def dataset_upload(request):
         )
 
     required_columns = [
-        "IDENT",
         "Especie",
         "coxalL",
         "coxalA",
@@ -574,17 +573,22 @@ def dataset_upload(request):
             elif isinstance(value, str) and not value.strip():
                 missing_fields.append(col)
 
-        if missing_fields:
+        if "Especie" in missing_fields:
             invalid_rows.append({
                 "row_excel": int(idx) + 2,
-                "missing_fields": missing_fields
+                "error": "No contiene especie"
+            })
+        elif len(missing_fields) == len(required_columns) - 1:
+            invalid_rows.append({
+                "row_excel": int(idx) + 2,
+                "error": "No contiene valores"
             })
 
     if invalid_rows:
         return JsonResponse(
             {
                 "ok": False,
-                "error": "El Excel contiene filas incompletas. Todas las aves deben tener todos los huesos rellenos.",
+                "error": "El Excel contiene fallos: todas las aves deben tener Especie y al menos un hueso.",
                 "invalid_rows": invalid_rows[:20]
             },
             status=400
@@ -613,9 +617,26 @@ def dataset_upload(request):
                 status=400
             )
 
+    # Imputamos los huesos faltantes usando el dataset actual antes de reemplazar Aves.
+    try:
+        dataset = get_aves_dataset()
+        if dataset.empty:
+            return JsonResponse(
+                {"ok": False, "error": "No hay datos de dataset disponibles en la base de datos."},
+                status=404
+            )
+
+        imputed_df = impute_dataframes(df, dataset)
+
+    except Exception as e:
+        return JsonResponse(
+            {"ok": False, "error": f"Error preparando los datos para entrenamiento: {str(e)}"},
+            status=500
+        )
+
     # Preparamos los datos del dataframe imputado para guardarlos en la base de datos.
     try:
-        aves_to_create = build_aves_instances_from_df(df)
+        aves_to_create = build_aves_instances_from_df(imputed_df)
     except Exception as e:
         return JsonResponse(
             {
@@ -638,7 +659,7 @@ def dataset_upload(request):
             dataset_artifact = DatasetArtifact.objects.create(
                 created_by=request.user if request.user.is_authenticated else None,
                 original_filename=f.name,
-                row_count=len(df),
+                row_count=len(imputed_df),
                 is_active=True,
             )
 
@@ -688,7 +709,7 @@ def dataset_upload(request):
     return JsonResponse({
         "ok": True,
         "message": "Dataset reemplazado en PostgreSQL y modelo reentrenado correctamente.",
-        "rows": len(df),
+        "rows": len(imputed_df),
         "dataset_id": dataset_artifact.id,
         "model_id": model_artifact.id,
         "model_name": model_name,
